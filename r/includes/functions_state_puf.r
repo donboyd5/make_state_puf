@@ -1,4 +1,13 @@
 
+get_puf_xagg <- function(){
+  puf <- read_csv(paste0(globals$pufdir, "puf2011.csv"), 
+                  col_types = cols(.default= col_double()), 
+                  n_max=-1)
+  puf <- puf %>%
+    filter(MARS!=0) # exclude 4 aggregate records
+  return(puf)
+}
+
 get_agi_group <- function(agi, year){
   if(year==2011) agibrks <- globals$agibrks_hist2_2011 else
     if(year==2016) agibrks <- globals$agibrks_hist2_2016 

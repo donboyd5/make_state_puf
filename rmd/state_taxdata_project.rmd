@@ -59,7 +59,6 @@ source(here::here("r/includes", "functions_state_puf.r"))
 ```{r ONETIME}
 # create a clean file of 2011 SOI Historical Table 2 targets, all states, saved in data/hist2_2011.csv
 source(here::here("r", "0a_get_and_save_SOI_state_summary_files.r"))
-
 source(here::here("r", "0b_prepare_ratio_adjusted_state_weights.r"))
 
 

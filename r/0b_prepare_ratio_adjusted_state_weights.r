@@ -34,11 +34,13 @@ source("./r/includes/functions_state_puf.r")
 #                ONETIME: Prepare a file with RECID and ratio-adjusted weights for EACH state ####
 #****************************************************************************************************
 #.. puf data and variable names ----
-puf <- readRDS(paste0(globals$tc.dir, "puf_lc.rds")) # note that this has all records, and has wt variable
+# puf <- readRDS(paste0(globals$tc.dir, "puf_lc.rds")) # note that this has all records, and has wt variable
+puf <- get_puf_xagg() # ORIGINAL PUF less the 4 aggregate records
 glimpse(puf)
 
 pufwts <- puf %>%
-  mutate(agi_group=get_agi_group(e00100, 2011)) %>%
+  mutate(agi_group=get_agi_group(E00100, 2011),
+         wt=S006) %>%
   group_by(agi_group) %>%
   summarise(n=n(), nret=sum(wt), nret_joint=sum(wt * (MARS==2))) %>%
   mutate(nret_other=nret - nret_joint, incgrp=paste0("inc", as.numeric(agi_group)))
@@ -47,6 +49,7 @@ pufwts
 get_rweights <- function(stabbr){
   # get target weights for the state
   hist2_targets <- get_hist2_targets(2011, stabbr)
+  
   targwts <- hist2_targets %>%
     filter(lineno %in% 1:2, incgrp!="inc0") %>%
     mutate(vname=ifelse(lineno==1, "nret", "nret_joint")) %>%
