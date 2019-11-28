@@ -1,0 +1,28 @@
+// See https://pslmodels.github.io/Tax-Calculator/uguide.html#pol for policy parameters
+// A reform that creates winners and losers vs 2017 law
+//   Eliminate standard deduction
+//   Eliminate itemized deductions
+//   Increase capital gains rates
+//   Lower regular income tax rates
+//   Raise pass-through rates slightly
+{
+    "STD": {"2017": [0, 0, 0, 0, 0]},
+    "ID_c": {"2017": [0, 0, 0, 0, 0]},
+    "CG_rt1": {"2017": 0.10},
+    "CG_rt2": {"2017": 0.25},
+    "CG_rt3": {"2017": 0.30},
+    "II_rt1": {"2017": 0.0},
+    "II_rt2": {"2017": 0.10},
+    "II_rt3": {"2017": 0.15},
+    "II_rt4": {"2017": 0.20},
+    "II_rt5": {"2017": 0.25},
+    "II_rt6": {"2017": 0.30},
+    "II_rt7": {"2017": 0.30},
+    "PT_rt1": {"2017": 0.15},
+    "PT_rt2": {"2017": 0.20},
+    "PT_rt3": {"2017": 0.275},
+    "PT_rt4": {"2017": 0.30},
+    "PT_rt5": {"2017": 0.35},
+    "PT_rt6": {"2017": 0.40},
+    "PT_rt7": {"2017": 0.40}
+}

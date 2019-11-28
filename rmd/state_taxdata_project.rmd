@@ -1,0 +1,69 @@
+---
+title: "State TaxData Project"
+author: Don Boyd
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output:
+  html_notebook: 
+    df_print: paged
+    toc: yes
+    toc_depth: 5
+    number_sections: true
+editor_options: 
+  chunk_output_type: console
+---
+
+# Project Statement of Work
+
+
+# Yimeng's Project Statement of Work
+> Augment Boyd’s current project in which he is developing methods for creating a single state microdata tax file, in two ways: (a) rigorously compare file quality under several different approaches under investigation, and (b) port the approach that produces the best results from R to Python so that it can readily be integrated with TaxData.
+
+
+<!-- First set things up, then run things -->
+
+
+# Set things up
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo=FALSE, warning=FALSE, message=FALSE)
+```
+
+
+```{r system_specific_info, include=TRUE}
+# change these as needed
+# pufdir <- "C:/Users/donbo/Dropbox/OSPC - Shared/IRS_pubuse_2011/"
+
+```
+
+
+```{r loads}
+source(here::here("r/includes", "libraries.r"))
+source(here::here("r/includes", "globals.r"))
+globals
+source(here::here("r/includes", "functions_state_puf.r"))
+
+```
+
+
+
+# Outline of work
+
+1. Create 
+
+
+
+# Steps
+
+## Create file
+
+```{r ONETIME}
+# create a clean file of 2011 SOI Historical Table 2 targets, all states, saved in data/hist2_2011.csv
+source(here::here("r", "0a_get_and_save_SOI_state_summary_files.r"))
+
+source(here::here("r", "0b_prepare_ratio_adjusted_state_weights.r"))
+
+
+
+
+```
+

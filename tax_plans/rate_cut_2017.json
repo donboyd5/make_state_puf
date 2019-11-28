@@ -1,0 +1,11 @@
+// See https://pslmodels.github.io/Tax-Calculator/uguide.html#pol for policy parameters
+// Reduce income tax rates across the board in 2017
+{
+    "II_rt1": {"2017": 0.05},
+    "II_rt2": {"2017": 0.10},
+    "II_rt3": {"2017": 0.20},
+    "II_rt4": {"2017": 0.25},
+    "II_rt5": {"2017": 0.28},
+    "II_rt6": {"2017": 0.30},
+    "II_rt7": {"2017": 0.35}
+}

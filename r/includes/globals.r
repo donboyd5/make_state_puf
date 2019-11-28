@@ -6,15 +6,16 @@
 # change these variables when moving to a new system 
 
 if(!exists("globals")) globals <- list()
+globals$dbox <- "C:/Users/donbo/Dropbox/"
 
-globals$pufdir <- "D:/Dropbox/OSPC - Shared/IRS_pubuse_2011/" # location of puf2011.csv
+globals$pufdir <- paste0(globals$dbox, "OSPC - Shared/IRS_pubuse_2011/") # location of puf2011.csv
 
 # private directory for Tax-Calculator record-level output that we don't want moved from this machine
 globals$tc.dir <- "D:/tcdir/"
 
 globals$statedir <- paste0(globals$tc.dir, "state_puf/")
 
-globals$hist2 <- "D:/Dropbox/RPrograms PC/OSPC/make_state_puf/data/SOI_Historical_Table_2/"
+globals$hist2 <- paste0(globals$dbox, "RPrograms PC/OSPC/make_state_puf/data/SOI_Historical_Table_2/")
 
 globals$tc.cli <- "C:/ProgramData/Anaconda3/Scripts/tc" # location of Tax-Calculator command-line interface
 

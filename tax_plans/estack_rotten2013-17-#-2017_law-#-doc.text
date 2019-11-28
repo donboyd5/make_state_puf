@@ -1,0 +1,811 @@
+REFORM DOCUMENTATION
+Baseline Growth-Difference Assumption Values by Year:
+none: using default growth assumptions
+Response Growth-Difference Assumption Values by Year:
+none: using default growth assumptions
+Policy Reform Parameter Values by Year:
+2017:
+ CPI_offset : 0.0025
+  name: Decimal offset ADDED to unchained CPI to get parameter indexing rate
+  desc: Values are zero before 2017; reforms that introduce indexing with
+        chained CPI would have values around -0.0025 beginning in the year
+        before the first year policy parameters will have values computed with
+        chained CPI.
+  baseline_value: -0.0025
+ EITC_ps_MarriedJ : [5600.0, 5600.0, 5600.0, 5600.0]
+                    ['0kids', '1kid', '2kids', '3+kids']
+  name: Extra earned income credit phaseout start AGI for married filling
+        jointly
+  desc: This is the additional amount added on the regular phaseout start
+        amount for taxpayers with filling status of married filing jointly.
+  baseline_value: [5590.0, 5590.0, 5590.0, 5590.0]
+ ID_Medical_frt : 0.1
+  name: Floor (as a decimal fraction of AGI) for deductible medical expenses.
+  desc: Taxpayers are eligible to deduct the portion of their medical expenses
+        exceeding this fraction of AGI.
+  baseline_value: 0.075
+2018:
+ ACTC_Income_thd : 3000.0
+  name: Additional Child Tax Credit income threshold
+  desc: The portion of earned income below this threshold does not count as
+        base for the Additional Child Tax Credit.
+  baseline_value: 2500.0
+ ACTC_c : 1000.0
+  name: Maximum refundable additional child tax credit
+  desc: This refundable credit is applied to child dependents and phases out
+        exactly like the CTC amount.
+  baseline_value: 1400.0
+ ALD_BusinessLosses_c : [9e+99, 9e+99, 9e+99, 9e+99, 9e+99]
+                        ['single', 'mjoint', 'mseparate', 'headhh', 'widow']
+  name: Maximum amount of business losses deductible
+  desc: Business losses in excess of this amount may not be deducted from AGI.
+  baseline_value: [250000.0, 500000.0, 250000.0, 250000.0, 500000.0]
+ ALD_DomesticProduction_hc : 0.0
+  name: Deduction for domestic production activity haircut
+  desc: If greater than zero, this decimal fraction reduces the portion of
+        domestic production activity that can be deducted from AGI.
+  baseline_value: 1.0
+ AMT_CG_brk1 : [38754.54, 77509.08, 38754.54, 51876.96, 77509.08]
+               ['single', 'mjoint', 'mseparate', 'headhh', 'widow']
+  name: Top of long-term capital gains and qualified dividends (AMT) tax
+        bracket 1
+  desc: The gains and dividends, stacked last, of AMT taxable income below
+        this are taxed at AMT capital gain rate 1.
+  baseline_value: [38600.0, 77200.0, 38600.0, 51700.0, 77200.0]
+ AMT_CG_brk2 : [427270.08, 480678.84, 240339.42, 453974.46, 480678.84]
+               ['single', 'mjoint', 'mseparate', 'headhh', 'widow']
+  name: Top of long-term capital gains and qualified dividends (AMT) tax
+        bracket 2
+  desc: The gains and dividends, stacked last, of AMT taxable income below
+        this threshold and above bracket 1 are taxed at AMT capital gain rate
+        2.
+  baseline_value: [425800.0, 479000.0, 239500.0, 452400.0, 479000.0]
+ AMT_brk1 : 191781.36
+  name: AMT bracket 1 (upper threshold)
+  desc: AMT taxable income below this is subject to AMT rate 1 and above it is
+        subject to AMT rate 1 + the additional AMT rate.
+  baseline_value: 191100.0
+ AMT_child_em : 7659.0
+  name: Child AMT exemption additional income base
+  desc: The child's AMT exemption is capped by this amount plus the child's
+        earned income.
+  baseline_value: 7600.0
+ AMT_em : [55451.16, 86291.4, 43145.7, 55451.16, 86291.4]
+          ['single', 'mjoint', 'mseparate', 'headhh', 'widow']
+  name: AMT exemption amount
+  desc: The amount of AMT taxable income exempted from AMT.
+  baseline_value: [70300.0, 109400.0, 54700.0, 70300.0, 109400.0]
+ AMT_em_pe : 254738.34
+  name: AMT exemption phaseout ending AMT taxable income for Married filing
+        Separately
+  desc: The AMT exemption is entirely disallowed beyond this AMT taxable
+        income level for individuals who are married but filing separately.
+  baseline_value: 718800.0
+ AMT_em_ps : [123258.84, 164311.08, 82155.54, 123258.84, 164311.08]
+             ['single', 'mjoint', 'mseparate', 'headhh', 'widow']
+  name: AMT exemption phaseout start
+  desc: AMT exemption starts to decrease when AMT taxable income goes beyond
+        this threshold.
+  baseline_value: [500000.0, 1000000.0, 500000.0, 500000.0, 1000000.0]
+ CG_brk1 : [38754.54, 77509.08, 38754.54, 51876.96, 77509.08]
+           ['single', 'mjoint', 'mseparate', 'headhh', 'widow']
+  name: Top of long-term capital gains and qualified dividends
+        (regular/non-AMT) tax bracket 1
+  desc: The gains and dividends (stacked on top of regular income) below this
+        are taxed at capital gain rate 1.
+  baseline_value: [38600.0, 77200.0, 38600.0, 51700.0, 77200.0]
+ CG_brk2 : [427270.08, 480678.84, 240339.42, 453974.46, 480678.84]
+           ['single', 'mjoint', 'mseparate', 'headhh', 'widow']
+  name: Top of long-term capital gains and qualified dividends
+        (regular/non-AMT) tax bracket 2
+  desc: The gains and dividends (stacked on top of regular income) below this
+        and above top of bracket 1 are taxed at capital gain rate 2.
+  baseline_value: [425800.0, 479000.0, 239500.0, 452400.0, 479000.0]
+ CPI_offset : 0.0025
+  name: Decimal offset ADDED to unchained CPI to get parameter indexing rate
+  desc: Values are zero before 2017; reforms that introduce indexing with
+        chained CPI would have values around -0.0025 beginning in the year
+        before the first year policy parameters will have values computed with
+        chained CPI.
+  baseline_value: -0.0025
+ CTC_c : 1000.0
+  name: Maximum nonrefundable child tax credit per child
+  desc: The maximum nonrefundable credit allowed for each child.
+  baseline_value: 2000.0
+ CTC_ps : [75000.0, 110000.0, 55000.0, 75000.0, 75000.0]
+          ['single', 'mjoint', 'mseparate', 'headhh', 'widow']
+  name: Child tax credit phaseout MAGI start
+  desc: Child tax credit begins to decrease when MAGI is above this level;
+        read descriptions of the dependent credit amounts for how they phase
+        out when MAGI is above this level.
+  baseline_value: [200000.0, 400000.0, 200000.0, 200000.0, 400000.0]
+ EITC_InvestIncome_c : 3523.14
+  name: Maximum investment income before EITC reduction
+  desc: The EITC amount is reduced when investment income exceeds this
+        ceiling.
+  baseline_value: 3500.0
+ EITC_c : [520.81, 3472.08, 5735.06, 6451.94]
+          ['0kids', '1kid', '2kids', '3+kids']
+  name: Maximum earned income credit
+  desc: This is the maximum amount of earned income credit taxpayers are
+        eligible for; it depends on how many kids they have.
+  baseline_value: [519.0, 3461.0, 5716.0, 6431.0]
+ EITC_ps : [8516.81, 18728.81, 18728.81, 18728.81]
+           ['0kids', '1kid', '2kids', '3+kids']
+  name: Earned income credit phaseout start AGI
+  desc: If AGI is higher than this threshold, the amount of EITC will start to
+        decrease at the phaseout rate.
+  baseline_value: [8490.0, 18660.0, 18660.0, 18660.0]
+ EITC_ps_MarriedJ : [5718.72, 5718.72, 5718.72, 5718.72]
+                    ['0kids', '1kid', '2kids', '3+kids']
+  name: Extra earned income credit phaseout start AGI for married filling
+        jointly
+  desc: This is the additional amount added on the regular phaseout start
+        amount for taxpayers with filling status of married filing jointly.
+  baseline_value: [5680.0, 5690.0, 5690.0, 5690.0]
+ ETC_pe_Married : 134.8
+  name: Education tax credit phaseout ends (Married)
+  desc: The education tax credit will be zero for those taxpayers of married
+        filing status with modified AGI level (in thousands) higher than this
+        level.
+  baseline_value: 134.0
+ ETC_pe_Single : 67.4
+  name: Education tax credit phaseout ends (Single)
+  desc: The education tax credit will be zero for those taxpayers of single
+        filing status with modified AGI (in thousands) higher than this level.
+  baseline_value: 67.0
+ FST_AGI_thd_hi : [2042400.0, 2042400.0, 1021200.0, 2042400.0, 2042400.0]
+                  ['single', 'mjoint', 'mseparate', 'headhh', 'widow']
+  name: AGI level at which the New Minimum Tax is fully phased in
+  desc: The new minimum tax will be fully phased in at this level of AGI. If
+        there is no phase-in, this upper threshold should be set equal to the
+        lower AGI threshold.
+  baseline_value: [2000000.0, 2000000.0, 1000000.0, 2000000.0, 2000000.0]
+ FST_AGI_thd_lo : [1021200.0, 1021200.0, 510600.0, 1021200.0, 1021200.0]
+                  ['single', 'mjoint', 'mseparate', 'headhh', 'widow']
+  name: Minimum AGI needed to be subject to the new minimum tax
+  desc: A taxpayer is only subject to the new minimum tax if they exceed this
+        level of AGI.
+  baseline_value: [1000000.0, 1000000.0, 500000.0, 1000000.0, 1000000.0]
+ ID_AllTaxes_c : [9e+99, 9e+99, 9e+99, 9e+99, 9e+99]
+                 ['single', 'mjoint', 'mseparate', 'headhh', 'widow']
+  name: Ceiling on the amount of state and local income, sales and real estate
+        tax deductions allowed (dollars)
+  desc: The amount of state and local income, sales and real estate tax
+        deductions is limited to this dollar amount.
+  baseline_value: [10000.0, 10000.0, 5000.0, 10000.0, 10000.0]
+ ID_Casualty_hc : 0.0
+  name: Casualty expense deduction haircut
+  desc: This decimal fraction can be applied to limit the amount of casualty
+        expense deduction allowed.
+  baseline_value: 1.0
+ ID_Charity_crt_all : 0.5
+  name: Ceiling (as a decimal fraction of AGI) for all charitable contribution
+        deductions
+  desc: The total deduction for charity is capped at this fraction of AGI.
+  baseline_value: 0.6
+ ID_Medical_frt : 0.1
+  name: Floor (as a decimal fraction of AGI) for deductible medical expenses.
+  desc: Taxpayers are eligible to deduct the portion of their medical expenses
+        exceeding this fraction of AGI.
+  baseline_value: 0.075
+ ID_Miscellaneous_hc : 0.0
+  name: Miscellaneous expense deduction haircut
+  desc: This decimal fraction can be applied to limit the amount of
+        miscellaneous expense deduction allowed.
+  baseline_value: 1.0
+ ID_crt : 0.8
+  name: Itemized deduction maximum phaseout as a decimal fraction of total
+        itemized deductions (Pease provision)
+  desc: The phaseout amount is capped at this fraction of the original total
+        deduction.
+  baseline_value: 1.0
+ ID_prt : 0.03
+  name: Itemized deduction phaseout rate (Pease provision)
+  desc: Taxpayers will not be eligible to deduct the full amount of itemized
+        deduction if their AGI is above the phaseout start. The deductible
+        portion would be decreased at this rate for each dollar exceeding the
+        start.
+  baseline_value: 0.0
+ ID_ps : [267043.8, 320452.56, 160226.28, 293748.18, 320452.56]
+         ['single', 'mjoint', 'mseparate', 'headhh', 'widow']
+  name: Itemized deduction phaseout AGI start (Pease provision)
+  desc: The itemized deductions will be reduced for taxpayers with AGI higher
+        than this level.
+  baseline_value: [9e+99, 9e+99, 9e+99, 9e+99, 9e+99]
+ II_brk1 : [9522.69, 19045.38, 9522.69, 13633.02, 19045.38]
+           ['single', 'mjoint', 'mseparate', 'headhh', 'widow']
+  name: Personal income (regular/non-AMT/non-pass-through) tax bracket (upper
+        threshold) 1
+  desc: Taxable income below this threshold is taxed at tax rate 1.
+  baseline_value: [9525.0, 19050.0, 9525.0, 13600.0, 19050.0]
+ II_brk2 : [38754.54, 77509.08, 38754.54, 51876.96, 77509.08]
+           ['single', 'mjoint', 'mseparate', 'headhh', 'widow']
+  name: Personal income (regular/non-AMT/non-pass-through) tax bracket (upper
+        threshold) 2
+  desc: Income below this threshold and above tax bracket 1 is taxed at tax
+        rate 2.
+  baseline_value: [38700.0, 77400.0, 38700.0, 51800.0, 77400.0]
+ II_brk3 : [93848.28, 156345.72, 78172.86, 133981.44, 156345.72]
+           ['single', 'mjoint', 'mseparate', 'headhh', 'widow']
+  name: Personal income (regular/non-AMT/non-pass-through) tax bracket (upper
+        threshold) 3
+  desc: Income below this threshold and above tax bracket 2 is taxed at tax
+        rate 3.
+  baseline_value: [82500.0, 165000.0, 82500.0, 82500.0, 165000.0]
+ II_brk4 : [195712.98, 238297.02, 119148.51, 217005.0, 238297.02]
+           ['single', 'mjoint', 'mseparate', 'headhh', 'widow']
+  name: Personal income (regular/non-AMT/non-pass-through) tax bracket (upper
+        threshold) 4
+  desc: Income below this threshold and above tax bracket 3 is taxed at tax
+        rate 4.
+  baseline_value: [157500.0, 315000.0, 157500.0, 157500.0, 315000.0]
+ II_brk5 : [425534.04, 425534.04, 212767.02, 425534.04, 425534.04]
+           ['single', 'mjoint', 'mseparate', 'headhh', 'widow']
+  name: Personal income (regular/non-AMT/non-pass-through) tax bracket (upper
+        threshold) 5
+  desc: Income below this threshold and above tax bracket 4 is taxed at tax
+        rate 5.
+  baseline_value: [200000.0, 400000.0, 200000.0, 200000.0, 400000.0]
+ II_brk6 : [427270.08, 480678.84, 240339.42, 453974.46, 480678.84]
+           ['single', 'mjoint', 'mseparate', 'headhh', 'widow']
+  name: Personal income (regular/non-AMT/non-pass-through) tax bracket 6
+  desc: Income below this threshold and above tax bracket 5 is taxed at tax
+        rate 6.
+  baseline_value: [500000.0, 600000.0, 300000.0, 500000.0, 600000.0]
+ II_em : 4135.86
+  name: Personal and dependent exemption amount
+  desc: Subtracted from AGI in the calculation of taxable income, per taxpayer
+        and dependent.
+  baseline_value: 0.0
+ II_em_ps : [267043.8, 320452.56, 160226.28, 293748.18, 320452.56]
+            ['single', 'mjoint', 'mseparate', 'headhh', 'widow']
+  name: Personal exemption phaseout starting income
+  desc: If taxpayers' AGI is above this level, their personal exemption will
+        start to decrease at the personal exemption phaseout rate (PEP
+        provision).
+  baseline_value: [9e+99, 9e+99, 9e+99, 9e+99, 9e+99]
+ II_rt2 : 0.15
+  name: Personal income (regular/non-AMT/non-pass-through) tax rate 2
+  desc: The second lowest tax rate, applied to the portion of taxable income
+        below tax bracket 2 and above tax bracket 1.
+  baseline_value: 0.12
+ II_rt3 : 0.25
+  name: Personal income (regular/non-AMT/non-pass-through) tax rate 3
+  desc: The third lowest tax rate, applied to the portion of taxable income
+        below tax bracket 3 and above tax bracket 2.
+  baseline_value: 0.22
+ II_rt4 : 0.28
+  name: Personal income (regular/non-AMT/non-pass-through) tax rate 4
+  desc: The tax rate applied to the portion of taxable income below tax
+        bracket 4 and above tax bracket 3.
+  baseline_value: 0.24
+ II_rt5 : 0.33
+  name: Personal income (regular/non-AMT/non-pass-through) tax rate 5
+  desc: The third highest tax rate, applied to the portion of taxable income
+        below tax bracket 5 and above tax bracket 4.
+  baseline_value: 0.32
+ II_rt7 : 0.396
+  name: Personal income (regular/non-AMT/non-pass-through) tax rate 7
+  desc: The tax rate applied to the portion of taxable income below tax
+        bracket 7 and above tax bracket 6.
+  baseline_value: 0.37
+ ODC_c : 0.0
+  name: Maximum nonrefundable other-dependent credit
+  desc: This nonrefundable credit is applied to non-child dependents and
+        phases out along with the CTC amount.
+  baseline_value: 500.0
+ PT_brk1 : [9522.69, 19045.38, 9522.69, 13633.02, 19045.38]
+           ['single', 'mjoint', 'mseparate', 'headhh', 'widow']
+  name: Pass-through income tax bracket (upper threshold) 1
+  desc: Income from sole proprietorships, partnerships and S-corporations
+        below this threshold is taxed at tax rate 1.
+  baseline_value: [9525.0, 19050.0, 9525.0, 13600.0, 19050.0]
+ PT_brk2 : [38754.54, 77509.08, 38754.54, 51876.96, 77509.08]
+           ['single', 'mjoint', 'mseparate', 'headhh', 'widow']
+  name: Pass-through income tax bracket (upper threshold) 2
+  desc: Income from sole proprietorships, partnerships and S-corporations
+        below this threshold and above tax bracket 1 is taxed at tax rate 2.
+  baseline_value: [38700.0, 77400.0, 38700.0, 51800.0, 77400.0]
+ PT_brk3 : [93848.28, 156345.72, 78172.86, 133981.44, 156345.72]
+           ['single', 'mjoint', 'mseparate', 'headhh', 'widow']
+  name: Pass-through income tax bracket (upper threshold) 3
+  desc: Income from sole proprietorships, partnerships and S-corporations
+        below this threshold and above tax bracket 2 is taxed at tax rate 3.
+  baseline_value: [82500.0, 165000.0, 82500.0, 82500.0, 165000.0]
+ PT_brk4 : [195712.98, 238297.02, 119148.51, 217005.0, 238297.02]
+           ['single', 'mjoint', 'mseparate', 'headhh', 'widow']
+  name: Pass-through income tax bracket (upper threshold) 4
+  desc: Income from sole proprietorships, partnerships and S-corporations
+        below this threshold and above tax bracket 3 is taxed at tax rate 4.
+  baseline_value: [157500.0, 315000.0, 157500.0, 157500.0, 315000.0]
+ PT_brk5 : [425534.04, 425534.04, 212767.02, 425534.04, 425534.04]
+           ['single', 'mjoint', 'mseparate', 'headhh', 'widow']
+  name: Pass-through income tax bracket (upper threshold) 5
+  desc: Income from sole proprietorships, partnerships and S-corporations
+        below this threshold and above tax bracket 4 is taxed at tax rate 5.
+  baseline_value: [200000.0, 400000.0, 200000.0, 200000.0, 400000.0]
+ PT_brk6 : [427270.08, 480678.84, 240339.42, 453974.46, 480678.84]
+           ['single', 'mjoint', 'mseparate', 'headhh', 'widow']
+  name: Pass-through income tax bracket (upper threshold) 6
+  desc: Income from sole proprietorships, partnerships and S-corporations
+        below this threshold and above tax bracket 5 is taxed at tax rate 6.
+  baseline_value: [500000.0, 600000.0, 300000.0, 500000.0, 600000.0]
+ PT_qbid_alt_property_rt : 0.0
+  name: Alternative QBID cap rate on pass-through business property owned
+  desc: QBID is capped at this fraction of business property owned plus some
+        fraction of W-2 wages paid by the pass-through business if pre-QBID
+        taxable income is above the QBID thresholds and the alternative cap is
+        higher than the main wage-only cap.
+  baseline_value: 0.025
+ PT_qbid_alt_w2_wages_rt : 0.0
+  name: Alternative QBID cap rate on pass-through business W-2 wages paid
+  desc: QBID is capped at this fraction of W-2 wages paid by the pass-through
+        business plus some fraction of business property if pre-QBID taxable
+        income is above the QBID thresholds and the alternative cap is higher
+        than the main wage-only cap.
+  baseline_value: 0.25
+ PT_qbid_rt : 0.0
+  name: Pass-through qualified business income deduction rate
+  desc: Fraction of pass-through business income that may be excluded from
+        taxable income.
+  baseline_value: 0.2
+ PT_qbid_taxinc_gap : [1.0, 1.0, 1.0, 1.0, 1.0]
+                      ['single', 'mjoint', 'mseparate', 'headhh', 'widow']
+  name: Dollar gap between upper and lower threshold of pre-QBID taxable
+        income
+  desc: Pre-QBID taxable income above this upper threshold implies the QBID
+        amount is even more limited.
+  baseline_value: [50000.0, 100000.0, 50000.0, 50000.0, 100000.0]
+ PT_qbid_taxinc_thd : [0.0, 0.0, 0.0, 0.0, 0.0]
+                      ['single', 'mjoint', 'mseparate', 'headhh', 'widow']
+  name: Lower threshold of pre-QBID taxable income
+  desc: Pre-QBID taxable income above this lower threshold implies the QBID
+        amount begins to be limited.
+  baseline_value: [157500.0, 315000.0, 157500.0, 157500.0, 315000.0]
+ PT_qbid_w2_wages_rt : 0.0
+  name: QBID cap rate on pass-through business W-2 wages paid
+  desc: QBID is capped at this fraction of W-2 wages paid by the pass-through
+        business if pre-QBID taxable income is above the QBID thresholds.
+  baseline_value: 0.5
+ PT_rt2 : 0.15
+  name: Pass-through income tax rate 2
+  desc: The second lowest tax rate, applied to the portion of income from sole
+        proprietorships, partnerships and S-corporations below tax bracket 2
+        and above tax bracket 1.
+  baseline_value: 0.12
+ PT_rt3 : 0.25
+  name: Pass-through income tax rate 3
+  desc: The third lowest tax rate, applied to the portion of income from sole
+        proprietorships, partnerships and S-corporations below tax bracket 3
+        and above tax bracket 2.
+  baseline_value: 0.22
+ PT_rt4 : 0.28
+  name: Pass-through income tax rate 4
+  desc: The tax rate applied to the portion of income from sole
+        proprietorships, partnerships and S-corporations below tax bracket 4
+        and above tax bracket 3.
+  baseline_value: 0.24
+ PT_rt5 : 0.33
+  name: Pass-through income tax rate 5
+  desc: The third highest tax rate, applied to the portion of income from sole
+        proprietorships, partnerships and S-corporations below tax bracket 5
+        and above tax bracket 4.
+  baseline_value: 0.32
+ PT_rt7 : 0.396
+  name: Pass-through income tax rate 7
+  desc: The highest tax rate, applied to the portion of income from sole
+        proprietorships, partnerships and S-corporations below tax bracket 7
+        and above tax bracket 6.
+  baseline_value: 0.37
+ STD : [6484.62, 12969.24, 6484.62, 9548.22, 12969.24]
+       ['single', 'mjoint', 'mseparate', 'headhh', 'widow']
+  name: Standard deduction amount
+  desc: Amount filing unit can use as a standard deduction.
+  baseline_value: [12000.0, 24000.0, 12000.0, 18000.0, 24000.0]
+ STD_Aged : [1582.86, 1276.5, 1276.5, 1582.86, 1582.86]
+            ['single', 'mjoint', 'mseparate', 'headhh', 'widow']
+  name: Additional standard deduction for blind and aged
+  desc: To get the standard deduction for aged or blind individuals, taxpayers
+        need to add this value to regular standard deduction.
+  baseline_value: [1600.0, 1300.0, 1300.0, 1600.0, 1300.0]
+ STD_Dep : 1072.26
+  name: Standard deduction for dependents
+  desc: This is the maximum standard deduction for dependents.
+  baseline_value: 1050.0
+2019:
+ ACTC_Income_thd : 3000.0
+  name: Additional Child Tax Credit income threshold
+  desc: The portion of earned income below this threshold does not count as
+        base for the Additional Child Tax Credit.
+  baseline_value: 2500.0
+ ACTC_c : 1000.0
+  name: Maximum refundable additional child tax credit
+  desc: This refundable credit is applied to child dependents and phases out
+        exactly like the CTC amount.
+  baseline_value: 1400.0
+ ALD_AlimonyPaid_hc : 0.0
+  name: Adjustment for alimony-paid haircut
+  desc: Under pre-TCJA law, the full amount of alimony paid is taken as an
+        adjustment from gross income in arriving at AGI. This haircut can be
+        used to change the deduction allowed.
+  baseline_value: 1.0
+ ALD_AlimonyReceived_hc : 1.0
+  name: Adjustment for alimony-received haircut
+  desc: Under pre-TCJA law, none of alimony received is taken as an adjustment
+        from gross income in arriving at AGI. This haircut can be used to
+        change the deduction allowed.
+  baseline_value: 0.0
+ ALD_BusinessLosses_c : [9e+99, 9e+99, 9e+99, 9e+99, 9e+99]
+                        ['single', 'mjoint', 'mseparate', 'headhh', 'widow']
+  name: Maximum amount of business losses deductible
+  desc: Business losses in excess of this amount may not be deducted from AGI.
+  baseline_value: [255600.0, 511200.0, 255600.0, 255600.0, 511200.0]
+ ALD_DomesticProduction_hc : 0.0
+  name: Deduction for domestic production activity haircut
+  desc: If greater than zero, this decimal fraction reduces the portion of
+        domestic production activity that can be deducted from AGI.
+  baseline_value: 1.0
+ AMT_CG_brk1 : [39719.53, 79439.06, 39719.53, 53168.7, 79439.06]
+               ['single', 'mjoint', 'mseparate', 'headhh', 'widow']
+  name: Top of long-term capital gains and qualified dividends (AMT) tax
+        bracket 1
+  desc: The gains and dividends, stacked last, of AMT taxable income below
+        this are taxed at AMT capital gain rate 1.
+  baseline_value: [39464.64, 78929.28, 39464.64, 52858.08, 78929.28]
+ AMT_CG_brk2 : [437909.1, 492647.74, 246323.87, 465278.42, 492647.74]
+               ['single', 'mjoint', 'mseparate', 'headhh', 'widow']
+  name: Top of long-term capital gains and qualified dividends (AMT) tax
+        bracket 2
+  desc: The gains and dividends, stacked last, of AMT taxable income below
+        this threshold and above bracket 1 are taxed at AMT capital gain rate
+        2.
+  baseline_value: [435337.92, 489729.6, 244864.8, 462533.76, 489729.6]
+ AMT_brk1 : 196556.72
+  name: AMT bracket 1 (upper threshold)
+  desc: AMT taxable income below this is subject to AMT rate 1 and above it is
+        subject to AMT rate 1 + the additional AMT rate.
+  baseline_value: 195380.64
+ AMT_child_em : 7849.71
+  name: Child AMT exemption additional income base
+  desc: The child's AMT exemption is capped by this amount plus the child's
+        earned income.
+  baseline_value: 7770.24
+ AMT_em : [56831.89, 88440.06, 44220.03, 56831.89, 88440.06]
+          ['single', 'mjoint', 'mseparate', 'headhh', 'widow']
+  name: AMT exemption amount
+  desc: The amount of AMT taxable income exempted from AMT.
+  baseline_value: [71874.72, 111850.56, 55925.28, 71874.72, 111850.56]
+ AMT_em_pe : 261081.32
+  name: AMT exemption phaseout ending AMT taxable income for Married filing
+        Separately
+  desc: The AMT exemption is entirely disallowed beyond this AMT taxable
+        income level for individuals who are married but filing separately.
+  baseline_value: 734901.12
+ AMT_em_ps : [126327.99, 168402.43, 84201.21, 126327.99, 168402.43]
+             ['single', 'mjoint', 'mseparate', 'headhh', 'widow']
+  name: AMT exemption phaseout start
+  desc: AMT exemption starts to decrease when AMT taxable income goes beyond
+        this threshold.
+  baseline_value: [511200.0, 1022400.0, 511200.0, 511200.0, 1022400.0]
+ CG_brk1 : [39719.53, 79439.06, 39719.53, 53168.7, 79439.06]
+           ['single', 'mjoint', 'mseparate', 'headhh', 'widow']
+  name: Top of long-term capital gains and qualified dividends
+        (regular/non-AMT) tax bracket 1
+  desc: The gains and dividends (stacked on top of regular income) below this
+        are taxed at capital gain rate 1.
+  baseline_value: [39464.64, 78929.28, 39464.64, 52858.08, 78929.28]
+ CG_brk2 : [437909.1, 492647.74, 246323.87, 465278.42, 492647.74]
+           ['single', 'mjoint', 'mseparate', 'headhh', 'widow']
+  name: Top of long-term capital gains and qualified dividends
+        (regular/non-AMT) tax bracket 2
+  desc: The gains and dividends (stacked on top of regular income) below this
+        and above top of bracket 1 are taxed at capital gain rate 2.
+  baseline_value: [435337.92, 489729.6, 244864.8, 462533.76, 489729.6]
+ CPI_offset : 0.0025
+  name: Decimal offset ADDED to unchained CPI to get parameter indexing rate
+  desc: Values are zero before 2017; reforms that introduce indexing with
+        chained CPI would have values around -0.0025 beginning in the year
+        before the first year policy parameters will have values computed with
+        chained CPI.
+  baseline_value: -0.0025
+ CTC_c : 1000.0
+  name: Maximum nonrefundable child tax credit per child
+  desc: The maximum nonrefundable credit allowed for each child.
+  baseline_value: 2000.0
+ CTC_ps : [75000.0, 110000.0, 55000.0, 75000.0, 75000.0]
+          ['single', 'mjoint', 'mseparate', 'headhh', 'widow']
+  name: Child tax credit phaseout MAGI start
+  desc: Child tax credit begins to decrease when MAGI is above this level;
+        read descriptions of the dependent credit amounts for how they phase
+        out when MAGI is above this level.
+  baseline_value: [200000.0, 400000.0, 200000.0, 200000.0, 400000.0]
+ EITC_InvestIncome_c : 3610.87
+  name: Maximum investment income before EITC reduction
+  desc: The EITC amount is reduced when investment income exceeds this
+        ceiling.
+  baseline_value: 3578.4
+ EITC_c : [533.78, 3558.53, 5877.86, 6612.59]
+          ['0kids', '1kid', '2kids', '3+kids']
+  name: Maximum earned income credit
+  desc: This is the maximum amount of earned income credit taxpayers are
+        eligible for; it depends on how many kids they have.
+  baseline_value: [530.63, 3538.53, 5844.04, 6575.05]
+ EITC_ps : [8728.88, 19195.16, 19195.16, 19195.16]
+           ['0kids', '1kid', '2kids', '3+kids']
+  name: Earned income credit phaseout start AGI
+  desc: If AGI is higher than this threshold, the amount of EITC will start to
+        decrease at the phaseout rate.
+  baseline_value: [8680.18, 19077.98, 19077.98, 19077.98]
+ EITC_ps_MarriedJ : [5861.12, 5861.12, 5861.12, 5861.12]
+                    ['0kids', '1kid', '2kids', '3+kids']
+  name: Extra earned income credit phaseout start AGI for married filling
+        jointly
+  desc: This is the additional amount added on the regular phaseout start
+        amount for taxpayers with filling status of married filing jointly.
+  baseline_value: [5807.23, 5817.46, 5817.46, 5817.46]
+ ETC_pe_Married : 138.16
+  name: Education tax credit phaseout ends (Married)
+  desc: The education tax credit will be zero for those taxpayers of married
+        filing status with modified AGI level (in thousands) higher than this
+        level.
+  baseline_value: 137.0
+ ETC_pe_Single : 69.08
+  name: Education tax credit phaseout ends (Single)
+  desc: The education tax credit will be zero for those taxpayers of single
+        filing status with modified AGI (in thousands) higher than this level.
+  baseline_value: 68.5
+ FST_AGI_thd_hi : [2093255.76, 2093255.76, 1046627.88, 2093255.76, 2093255.76]
+                  ['single', 'mjoint', 'mseparate', 'headhh', 'widow']
+  name: AGI level at which the New Minimum Tax is fully phased in
+  desc: The new minimum tax will be fully phased in at this level of AGI. If
+        there is no phase-in, this upper threshold should be set equal to the
+        lower AGI threshold.
+  baseline_value: [2044800.0, 2044800.0, 1022400.0, 2044800.0, 2044800.0]
+ FST_AGI_thd_lo : [1046627.88, 1046627.88, 523313.94, 1046627.88, 1046627.88]
+                  ['single', 'mjoint', 'mseparate', 'headhh', 'widow']
+  name: Minimum AGI needed to be subject to the new minimum tax
+  desc: A taxpayer is only subject to the new minimum tax if they exceed this
+        level of AGI.
+  baseline_value: [1022400.0, 1022400.0, 511200.0, 1022400.0, 1022400.0]
+ ID_AllTaxes_c : [9e+99, 9e+99, 9e+99, 9e+99, 9e+99]
+                 ['single', 'mjoint', 'mseparate', 'headhh', 'widow']
+  name: Ceiling on the amount of state and local income, sales and real estate
+        tax deductions allowed (dollars)
+  desc: The amount of state and local income, sales and real estate tax
+        deductions is limited to this dollar amount.
+  baseline_value: [10224.0, 10224.0, 5112.0, 10224.0, 10224.0]
+ ID_Casualty_hc : 0.0
+  name: Casualty expense deduction haircut
+  desc: This decimal fraction can be applied to limit the amount of casualty
+        expense deduction allowed.
+  baseline_value: 1.0
+ ID_Charity_crt_all : 0.5
+  name: Ceiling (as a decimal fraction of AGI) for all charitable contribution
+        deductions
+  desc: The total deduction for charity is capped at this fraction of AGI.
+  baseline_value: 0.6
+ ID_Miscellaneous_hc : 0.0
+  name: Miscellaneous expense deduction haircut
+  desc: This decimal fraction can be applied to limit the amount of
+        miscellaneous expense deduction allowed.
+  baseline_value: 1.0
+ ID_crt : 0.8
+  name: Itemized deduction maximum phaseout as a decimal fraction of total
+        itemized deductions (Pease provision)
+  desc: The phaseout amount is capped at this fraction of the original total
+        deduction.
+  baseline_value: 1.0
+ ID_prt : 0.03
+  name: Itemized deduction phaseout rate (Pease provision)
+  desc: Taxpayers will not be eligible to deduct the full amount of itemized
+        deduction if their AGI is above the phaseout start. The deductible
+        portion would be decreased at this rate for each dollar exceeding the
+        start.
+  baseline_value: 0.0
+ ID_ps : [273693.19, 328431.83, 164215.91, 301062.51, 328431.83]
+         ['single', 'mjoint', 'mseparate', 'headhh', 'widow']
+  name: Itemized deduction phaseout AGI start (Pease provision)
+  desc: The itemized deductions will be reduced for taxpayers with AGI higher
+        than this level.
+  baseline_value: [9e+99, 9e+99, 9e+99, 9e+99, 9e+99]
+ II_brk1 : [9759.8, 19519.61, 9759.8, 13972.48, 19519.61]
+           ['single', 'mjoint', 'mseparate', 'headhh', 'widow']
+  name: Personal income (regular/non-AMT/non-pass-through) tax bracket (upper
+        threshold) 1
+  desc: Taxable income below this threshold is taxed at tax rate 1.
+  baseline_value: [9738.36, 19476.72, 9738.36, 13904.64, 19476.72]
+ II_brk2 : [39719.53, 79439.06, 39719.53, 53168.7, 79439.06]
+           ['single', 'mjoint', 'mseparate', 'headhh', 'widow']
+  name: Personal income (regular/non-AMT/non-pass-through) tax bracket (upper
+        threshold) 2
+  desc: Income below this threshold and above tax bracket 1 is taxed at tax
+        rate 2.
+  baseline_value: [39566.88, 79133.76, 39566.88, 52960.32, 79133.76]
+ II_brk3 : [96185.1, 160238.73, 80119.36, 137317.58, 160238.73]
+           ['single', 'mjoint', 'mseparate', 'headhh', 'widow']
+  name: Personal income (regular/non-AMT/non-pass-through) tax bracket (upper
+        threshold) 3
+  desc: Income below this threshold and above tax bracket 2 is taxed at tax
+        rate 3.
+  baseline_value: [84348.0, 168696.0, 84348.0, 84348.0, 168696.0]
+ II_brk4 : [200586.23, 244230.62, 122115.31, 222408.42, 244230.62]
+           ['single', 'mjoint', 'mseparate', 'headhh', 'widow']
+  name: Personal income (regular/non-AMT/non-pass-through) tax bracket (upper
+        threshold) 4
+  desc: Income below this threshold and above tax bracket 3 is taxed at tax
+        rate 4.
+  baseline_value: [161028.0, 322056.0, 161028.0, 161028.0, 322056.0]
+ II_brk5 : [436129.84, 436129.84, 218064.92, 436129.84, 436129.84]
+           ['single', 'mjoint', 'mseparate', 'headhh', 'widow']
+  name: Personal income (regular/non-AMT/non-pass-through) tax bracket (upper
+        threshold) 5
+  desc: Income below this threshold and above tax bracket 4 is taxed at tax
+        rate 5.
+  baseline_value: [204480.0, 408960.0, 204480.0, 204480.0, 408960.0]
+ II_brk6 : [437909.1, 492647.74, 246323.87, 465278.42, 492647.74]
+           ['single', 'mjoint', 'mseparate', 'headhh', 'widow']
+  name: Personal income (regular/non-AMT/non-pass-through) tax bracket 6
+  desc: Income below this threshold and above tax bracket 5 is taxed at tax
+        rate 6.
+  baseline_value: [511200.0, 613440.0, 306720.0, 511200.0, 613440.0]
+ II_em : 4238.84
+  name: Personal and dependent exemption amount
+  desc: Subtracted from AGI in the calculation of taxable income, per taxpayer
+        and dependent.
+  baseline_value: 0.0
+ II_em_ps : [273693.19, 328431.83, 164215.91, 301062.51, 328431.83]
+            ['single', 'mjoint', 'mseparate', 'headhh', 'widow']
+  name: Personal exemption phaseout starting income
+  desc: If taxpayers' AGI is above this level, their personal exemption will
+        start to decrease at the personal exemption phaseout rate (PEP
+        provision).
+  baseline_value: [9e+99, 9e+99, 9e+99, 9e+99, 9e+99]
+ II_rt2 : 0.15
+  name: Personal income (regular/non-AMT/non-pass-through) tax rate 2
+  desc: The second lowest tax rate, applied to the portion of taxable income
+        below tax bracket 2 and above tax bracket 1.
+  baseline_value: 0.12
+ II_rt3 : 0.25
+  name: Personal income (regular/non-AMT/non-pass-through) tax rate 3
+  desc: The third lowest tax rate, applied to the portion of taxable income
+        below tax bracket 3 and above tax bracket 2.
+  baseline_value: 0.22
+ II_rt4 : 0.28
+  name: Personal income (regular/non-AMT/non-pass-through) tax rate 4
+  desc: The tax rate applied to the portion of taxable income below tax
+        bracket 4 and above tax bracket 3.
+  baseline_value: 0.24
+ II_rt5 : 0.33
+  name: Personal income (regular/non-AMT/non-pass-through) tax rate 5
+  desc: The third highest tax rate, applied to the portion of taxable income
+        below tax bracket 5 and above tax bracket 4.
+  baseline_value: 0.32
+ II_rt7 : 0.396
+  name: Personal income (regular/non-AMT/non-pass-through) tax rate 7
+  desc: The tax rate applied to the portion of taxable income below tax
+        bracket 7 and above tax bracket 6.
+  baseline_value: 0.37
+ ODC_c : 0.0
+  name: Maximum nonrefundable other-dependent credit
+  desc: This nonrefundable credit is applied to non-child dependents and
+        phases out along with the CTC amount.
+  baseline_value: 500.0
+ PT_brk1 : [9759.8, 19519.61, 9759.8, 13972.48, 19519.61]
+           ['single', 'mjoint', 'mseparate', 'headhh', 'widow']
+  name: Pass-through income tax bracket (upper threshold) 1
+  desc: Income from sole proprietorships, partnerships and S-corporations
+        below this threshold is taxed at tax rate 1.
+  baseline_value: [9738.36, 19476.72, 9738.36, 13904.64, 19476.72]
+ PT_brk2 : [39719.53, 79439.06, 39719.53, 53168.7, 79439.06]
+           ['single', 'mjoint', 'mseparate', 'headhh', 'widow']
+  name: Pass-through income tax bracket (upper threshold) 2
+  desc: Income from sole proprietorships, partnerships and S-corporations
+        below this threshold and above tax bracket 1 is taxed at tax rate 2.
+  baseline_value: [39566.88, 79133.76, 39566.88, 52960.32, 79133.76]
+ PT_brk3 : [96185.1, 160238.73, 80119.36, 137317.58, 160238.73]
+           ['single', 'mjoint', 'mseparate', 'headhh', 'widow']
+  name: Pass-through income tax bracket (upper threshold) 3
+  desc: Income from sole proprietorships, partnerships and S-corporations
+        below this threshold and above tax bracket 2 is taxed at tax rate 3.
+  baseline_value: [84348.0, 168696.0, 84348.0, 84348.0, 168696.0]
+ PT_brk4 : [200586.23, 244230.62, 122115.31, 222408.42, 244230.62]
+           ['single', 'mjoint', 'mseparate', 'headhh', 'widow']
+  name: Pass-through income tax bracket (upper threshold) 4
+  desc: Income from sole proprietorships, partnerships and S-corporations
+        below this threshold and above tax bracket 3 is taxed at tax rate 4.
+  baseline_value: [161028.0, 322056.0, 161028.0, 161028.0, 322056.0]
+ PT_brk5 : [436129.84, 436129.84, 218064.92, 436129.84, 436129.84]
+           ['single', 'mjoint', 'mseparate', 'headhh', 'widow']
+  name: Pass-through income tax bracket (upper threshold) 5
+  desc: Income from sole proprietorships, partnerships and S-corporations
+        below this threshold and above tax bracket 4 is taxed at tax rate 5.
+  baseline_value: [204480.0, 408960.0, 204480.0, 204480.0, 408960.0]
+ PT_brk6 : [437909.1, 492647.74, 246323.87, 465278.42, 492647.74]
+           ['single', 'mjoint', 'mseparate', 'headhh', 'widow']
+  name: Pass-through income tax bracket (upper threshold) 6
+  desc: Income from sole proprietorships, partnerships and S-corporations
+        below this threshold and above tax bracket 5 is taxed at tax rate 6.
+  baseline_value: [511200.0, 613440.0, 306720.0, 511200.0, 613440.0]
+ PT_qbid_alt_property_rt : 0.0
+  name: Alternative QBID cap rate on pass-through business property owned
+  desc: QBID is capped at this fraction of business property owned plus some
+        fraction of W-2 wages paid by the pass-through business if pre-QBID
+        taxable income is above the QBID thresholds and the alternative cap is
+        higher than the main wage-only cap.
+  baseline_value: 0.025
+ PT_qbid_alt_w2_wages_rt : 0.0
+  name: Alternative QBID cap rate on pass-through business W-2 wages paid
+  desc: QBID is capped at this fraction of W-2 wages paid by the pass-through
+        business plus some fraction of business property if pre-QBID taxable
+        income is above the QBID thresholds and the alternative cap is higher
+        than the main wage-only cap.
+  baseline_value: 0.25
+ PT_qbid_rt : 0.0
+  name: Pass-through qualified business income deduction rate
+  desc: Fraction of pass-through business income that may be excluded from
+        taxable income.
+  baseline_value: 0.2
+ PT_qbid_taxinc_gap : [1.0, 1.0, 1.0, 1.0, 1.0]
+                      ['single', 'mjoint', 'mseparate', 'headhh', 'widow']
+  name: Dollar gap between upper and lower threshold of pre-QBID taxable
+        income
+  desc: Pre-QBID taxable income above this upper threshold implies the QBID
+        amount is even more limited.
+  baseline_value: [50000.0, 100000.0, 50000.0, 50000.0, 100000.0]
+ PT_qbid_taxinc_thd : [0.0, 0.0, 0.0, 0.0, 0.0]
+                      ['single', 'mjoint', 'mseparate', 'headhh', 'widow']
+  name: Lower threshold of pre-QBID taxable income
+  desc: Pre-QBID taxable income above this lower threshold implies the QBID
+        amount begins to be limited.
+  baseline_value: [161028.0, 322056.0, 161028.0, 161028.0, 322056.0]
+ PT_qbid_w2_wages_rt : 0.0
+  name: QBID cap rate on pass-through business W-2 wages paid
+  desc: QBID is capped at this fraction of W-2 wages paid by the pass-through
+        business if pre-QBID taxable income is above the QBID thresholds.
+  baseline_value: 0.5
+ PT_rt2 : 0.15
+  name: Pass-through income tax rate 2
+  desc: The second lowest tax rate, applied to the portion of income from sole
+        proprietorships, partnerships and S-corporations below tax bracket 2
+        and above tax bracket 1.
+  baseline_value: 0.12
+ PT_rt3 : 0.25
+  name: Pass-through income tax rate 3
+  desc: The third lowest tax rate, applied to the portion of income from sole
+        proprietorships, partnerships and S-corporations below tax bracket 3
+        and above tax bracket 2.
+  baseline_value: 0.22
+ PT_rt4 : 0.28
+  name: Pass-through income tax rate 4
+  desc: The tax rate applied to the portion of income from sole
+        proprietorships, partnerships and S-corporations below tax bracket 4
+        and above tax bracket 3.
+  baseline_value: 0.24
+ PT_rt5 : 0.33
+  name: Pass-through income tax rate 5
+  desc: The third highest tax rate, applied to the portion of income from sole
+        proprietorships, partnerships and S-corporations below tax bracket 5
+        and above tax bracket 4.
+  baseline_value: 0.32
+ PT_rt7 : 0.396
+  name: Pass-through income tax rate 7
+  desc: The highest tax rate, applied to the portion of income from sole
+        proprietorships, partnerships and S-corporations below tax bracket 7
+        and above tax bracket 6.
+  baseline_value: 0.37
+ STD : [6646.09, 13292.17, 6646.09, 9785.97, 13292.17]
+       ['single', 'mjoint', 'mseparate', 'headhh', 'widow']
+  name: Standard deduction amount
+  desc: Amount filing unit can use as a standard deduction.
+  baseline_value: [12268.8, 24537.6, 12268.8, 18403.2, 24537.6]
+ STD_Aged : [1622.27, 1308.28, 1308.28, 1622.27, 1622.27]
+            ['single', 'mjoint', 'mseparate', 'headhh', 'widow']
+  name: Additional standard deduction for blind and aged
+  desc: To get the standard deduction for aged or blind individuals, taxpayers
+        need to add this value to regular standard deduction.
+  baseline_value: [1635.84, 1329.12, 1329.12, 1635.84, 1329.12]
+ STD_Dep : 1098.96
+  name: Standard deduction for dependents
+  desc: This is the maximum standard deduction for dependents.
+  baseline_value: 1073.52

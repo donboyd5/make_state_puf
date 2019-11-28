@@ -1,5 +1,3 @@
-# 5/18/2019
-
 # Parse and save SOI Historical Table 2 data, which we will use as targets for the 2011 data file.
 
 # Save the result in hist2_2011.csv in the data directory.
@@ -8,11 +6,11 @@
 #****************************************************************************************************
 #                Libraries and globals ####
 #****************************************************************************************************
-source("./r/includes/libraries.r")
-source("./r/includes/globals.r")
-
-source("./r/includes/functions_general.r")
-source("./r/includes/functions_state_puf.r")
+# source("./r/includes/libraries.r")
+# source("./r/includes/globals.r")
+# 
+# source("./r/includes/functions_general.r")
+# source("./r/includes/functions_state_puf.r")
 
 
 #****************************************************************************************************
@@ -23,13 +21,10 @@ source("./r/includes/functions_state_puf.r")
 # <dbl> <chr>   <chr>                  <chr>    <dbl>   <dbl>   <dbl> <chr> <chr>          <chr>           <chr>      <chr>              <chr>                
 #   1   1024 e18600  State and local other~ inc4    5.93e7   50000   75000 e186~ e18600         (e00100 >= 500~ ""         ((e00100 >= 50000~ (wt * e18600
 
-(inclink <- get_income_ranges(2011))
+# (inclink <- get_income_ranges(2011))
 
-xwalk <- get_SOI_puf_xwalk(2011)
-ht(xwalk)
-
-globals
-
+# xwalk <- get_SOI_puf_xwalk(2011)
+# ht(xwalk)
 
 # create variable names for the hist2 data
 x1 <- read_excel(paste0(globals$hist2, "11in54cm.xlsx"), range="A3:TK3", col_names=FALSE)
@@ -59,17 +54,16 @@ vnames <- c("table_desc", vnamesdf$stinc)
 # get the 53-"state" hist2 data (states, DC, US, other areas)
 df1 <- read_excel(paste0(globals$hist2, "11in54cm.xlsx"), range="A10:TK112", col_names=vnames) %>%
   mutate(lineno=row_number()) %>%
-  select(lineno, everything())
+  select(lineno, everything()) %>%
+  mutate_at(vars(-lineno, -table_desc), list(~as.numeric(.)))
 df1[c(1:5, (nrow(df1)-5):nrow(df1)), c(1:5, (ncol(df1) - 5):ncol(df1))]
 
 df2 <- df1 %>%
-  gather(vname, value, -lineno, -table_desc) %>%
+  pivot_longer(cols=-c(lineno, table_desc), names_to="vname", values_to = "value") %>%
   separate(vname, c("stabbr", "incgrp"))
 ht(df2)
 
-write_csv(df2, "./data/hist2_2011.csv")
+write_csv(df2, here::here("data", "hist2_2011.csv"))
 
-
-# tmpny <- read_csv("./data/hist2_2011.csv") %>% filter(stabbr=="NY")
-
+rm(x1, x2, x3, inc, vnamesdf, vnames, df1)
 
