@@ -1,0 +1,37 @@
+
+
+Note re the message, "Slacks too small, adjusting variable bounds"
+See https://list.coin-or.org/pipermail/ipopt/2011-February/002309.html
+It means that a slack z becomes smaller than \eps*\mu, where \eps is machine precision
+The first thing to check for is scaling of variables and constraints such that the gradients are similar in scale, and then for redundant constraints.
+
+https://projects.coin-or.org/Ipopt/wiki/HintsAndTricks
+
+When you formulate your optimizaton problem, you should try to make it "well-scaled" to make it easier for Ipopt (or any nonlinear optimization package) to solve it. For this, you should try to make the "typical" values of the non-zero first partial derivatives of the objective and constraint functions to be on the order of, say, 0.01 to 100. For example, if you multiply a problem function by a number K, then the first partial derivatives for this function are also multiplied by K. On the other hand, if you replace a variable xi by a number K, then the partial derivatives with respect to this variable are divided by K.
+
+By default, Ipopt performs some very simple scaling of the problem functions, by looking at the gradients of each function evaluated at the user-provided starting point. If any entry for a given function is larger than 100, then this function is scaled down to make the largest entry in the gradient 100 (see the Ipopt options nlp_scaling_method and nlp_scaling_max_gradient). Of course, if some of the gradient elements are huge and some are very small, the variables corresponding to the small entries are almost ignored. If you set the print_level to at least 5, then you can see by how much the functions are scaled. For sufficiently large print_level you can also see the individual scaling factors for each constraint, and also the values of the first derivatives, if you want to find out which derivatives are very large or very small.
+
+
+https://www.coin-or.org/Ipopt/documentation/node43.html
+NLP Scaling
+
+obj_scaling_factor:
+Scaling factor for the objective function. 
+This option sets a scaling factor for the objective function. The scaling is seen internally by Ipopt but the unscaled objective is reported in the console output. If additional scaling parameters are computed (e.g. user-scaling or gradient-based), both factors are multiplied. If this value is chosen to be negative, Ipopt will maximize the objective function instead of minimizing it. The valid range for this real option is  $ {\tt -inf} < {\tt obj\_scaling\_factor } < {\tt +inf}$ and its default value is $ 1$.
+
+nlp_scaling_method:
+Select the technique used for scaling the NLP. 
+Selects the technique used for scaling the problem internally before it is solved. For user-scaling, the parameters come from the NLP. If you are using AMPL, they can be specified through suffixes ("scaling_factor") The default value for this string option is "gradient-based". 
+Possible values:
+none: no problem scaling will be performed
+user-scaling: scaling parameters will come from the user
+gradient-based: scale the problem so the maximum gradient at the starting point is scaling_max_gradient
+equilibration-based: scale the problem so that first derivatives are of order 1 at random points (only available with MC19)
+
+nlp_scaling_max_gradient:
+Maximum gradient after NLP scaling. 
+This is the gradient scaling cut-off. If the maximum gradient is above this value, then gradient based scaling will be performed. Scaling parameters are calculated to scale the maximum gradient back to this value. (This is g_max in Section 3.8 of the implementation paper.) Note: This option is only used if "nlp_scaling_method" is chosen as "gradient-based". The valid range for this real option is  $ 0 < {\tt nlp\_scaling\_max\_gradient } < {\tt +inf}$ and its default value is $ 100$.
+
+nlp_scaling_min_value:
+Minimum value of gradient-based scaling values. 
+This is the lower bound for the scaling factors computed by gradient-based scaling method. If some derivatives of some functions are huge, the scaling factors will otherwise become very small, and the (unscaled) final constraint violation, for example, might then be significant. Note: This option is only used if "nlp_scaling_method" is chosen as "gradient-based". The valid range for this real option is  $ 0 \le {\tt nlp\_scaling\_min\_value } < {\tt +inf}$ and its default value is $ 1 \cdot 10^{-08}$.

@@ -1,0 +1,199 @@
+---
+title: "Selected results"
+date: "`r format(Sys.time(), '%B %d, %Y')`"  # "`r Sys.Date()`"
+output:
+  html_notebook:
+    fig_height: 7
+    fig_width: 9
+    toc: yes
+  html_document:
+    fig_height: 7
+    fig_width: 9
+    toc: yes
+    toc_depth: 5
+---
+
+
+```{r setup, include=FALSE}
+# force the working directory for the notebook file to be the wd of the project - see:
+# https://support.rstudio.com/hc/en-us/community/posts/220826588-Working-directory-in-R-Notebooks
+#  also see the following, which does not look as good
+# https://stackoverflow.com/questions/44816945/why-setting-working-directory-in-r-notebook-doesnt-change-working-directory-in
+# knitr::opts_knit$set(root.dir = normalizePath("path")) # wherre path is desired wd
+
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+
+knitr::opts_chunk$set(echo=FALSE, message=FALSE, warning=FALSE)
+# knitr::opts_chunk$set(fig.width = ..., fig.height = ...)
+
+```
+
+
+```{r notes, include=FALSE}
+  # html_notebook:
+  #   df_print: paged
+  #   fig_height: 7
+  #   fig_width: 9
+  #   toc: yes
+  # html_document:
+  #   fig_height: 7
+  #   fig_width: 9
+  #   toc: yes
+  #   toc_depth: 5
+```
+
+
+```{r clear_warnings, eval=FALSE}
+# run this line to clear any old warning messages
+assign("last.warning", NULL, envir = baseenv())
+```
+
+
+```{r libs, include=FALSE}
+source("./r/includes/libraries.r")
+source("./r/includes/globals.r")
+
+source("./r/includes/functions_general.r")
+source("./r/includes/functions_state_puf.r")
+
+```
+
+
+```{r dataSetup, include=FALSE}
+pufny1 <- readRDS(paste0(globals$tc.dir, "NY/", "pufny1.rds"))
+# wt is the first cut weight
+# wtny_ratio same
+# wt_puf original puf weight
+glimpse(pufny1)
+
+puf.vnames <- get_puf_vnames()
+
+(inclink <- get_income_ranges(2011))
+
+```
+
+
+
+# Step 1, base-year file of state residents
+
+```{r include=FALSE}
+result <- readRDS(paste0(globals$tc.dir, "NY/targets538/", "result.rds"))
+targets.tol <- readRDS(paste0(globals$tc.dir, "NY/targets538/", "targets.tol.rds"))
+
+check <- tibble(target.num=targets.tol$target.num,
+                target=targets.tol$target,
+                lb=result$constraint_lower_bounds,
+                target.calc=result$constraints,
+                ub=result$constraint_upper_bounds) %>%
+  mutate(violation=case_when(target.calc < lb ~ target.calc - lb,
+                             target.calc > ub ~ ub - target.calc,
+                             TRUE ~ 0),
+         vpct=violation / target) %>% 
+  left_join(targets.tol %>% 
+              select(target.num, rhs, tol.group, pdiff, tol.default, tol, h2vname, agi_group, vdesc),
+            by="target.num") %>%
+  select(target.num, target, rhs, everything())
+
+# check %>%
+#   select(-tol.group, -violation) %>%
+#   kable(digits=c(rep(0, 6), rep(1, 4), rep(0, 3)), format.args = list(big.mark=",")) %>%
+#   kableExtra::kable_styling()
+count(check, h2vname)
+
+```
+
+
+```{r include=FALSE}
+f <- function(name){
+  df <- check %>%
+    filter(h2vname==name) %>%
+    left_join(inclink, by="agi_group")
+  
+  # set up definitions
+  c_type <- ifelse(str_detect(df$h2vname[1], "_n"), "# recs", "wtdsum")
+  c_suffix <- ifelse(c_type=="wtdsum", ": $ millions", ": weighted # of records")
+  c_vdesc <- df$vdesc[1]
+  
+  capt <- paste0(c_vdesc, c_suffix)
+  
+  tabdat <- df %>%
+    rename(init_val=rhs, final_val=target.calc,
+           init_pdiff=pdiff, lower=lb, upper=ub) %>%
+    adorn_totals() %>%
+    mutate(type=c_type, vdesc=c_vdesc) %>%
+    mutate_at(vars(target, init_val, lower, upper, final_val), ~ ifelse(type=="wtdsum", . / 1e6, .)) %>%
+    mutate(init_pdiff=init_val / target * 100 - 100,
+           tol=ifelse(row_number()==n(), NA_real_, tol),
+           final_pdiff=final_val / target * 100 - 100) %>%
+    select(h2vname, target.num, agi_label, target, init_val, init_pdiff, tol, lower, upper, final_val, final_pdiff)
+  
+  tabdat %>%
+    kable(caption=capt, digits=c(rep(0, 5), rep(1, 2), rep(0, 3), 1, 0), format.args = list(big.mark=",")) %>%
+    kableExtra::kable_styling(full_width = TRUE)
+}
+```
+
+
+## Selected components of income, and number of returns with that income
+```{r}
+f("e00100")
+f("e00100_n")
+
+f("e00200")
+f("e00200_n")
+
+f("e00300")
+f("e00300_n")
+
+f("e00650")
+f("e00650_n")
+
+f("e00900")
+f("e00900_n")
+
+f("e01000")
+f("e01000_n")
+
+f("e01700")
+f("e01700_n")
+
+f("e02500")
+f("e02500_n")
+
+```
+
+
+## Selected deductions
+```{r}
+f("e18400")
+f("e18400_n")
+
+f("e18500")
+f("e18500_n")
+
+```
+
+
+
+
+## Tax-related variables
+```{r}
+
+f("e09600")
+f("e09600_n")
+
+f("e05800")
+f("e05800_n")
+
+f("e07150")
+f("e07150_n")
+
+f("e09400")
+f("e09400_n")
+
+f("e10300")
+f("e10300_n")
+
+
+```
+

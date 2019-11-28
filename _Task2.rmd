@@ -1,0 +1,807 @@
+---
+title: "State TaxData Enhancement Project -- Task 2"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output:
+  html_notebook: 
+    df_print: paged
+    toc: yes
+    toc_depth: 5
+    number_sections: true
+editor_options: 
+  chunk_output_type: console
+---
+
+<!--
+  Enclose comments for RMD files in these kinds of opening and closing brackets
+-->
+
+# Explanation of Task 2
+## Goal of Task 2
+Our goal is to examine several different approaches to creating a state income tax microdata file from a national file. In practice, the data we will use to create a state file would be the the national PUF that has been enhanced via TaxData (or a synthetic version of the same). In this project we will use the ACS instead, as described below.
+
+There are many steps involved in creating a state file from a national file. The first step, which is one of the most important steps, is to construct weights for the records so that the file will represent a particular state rather than the nation. **This is the step we will focus on in Task 2.**
+
+To make the concept clear, suppose we have a national file that represents 150 million tax filers and that we want to adjust this file so that it represents New York, and suppose further that we know, from external information, that New York has 9 million filers, or 6% of the total. A naive approach to creating a state file would be to multiply each weight on the national file by 6% to arrive at weights for the state file. 
+
+The resulting file would get the tax-filing population total right for New York but would be wrong in other ways because it would not reflect the fact that New York's average income is higher than the U.S. average, or that its income distribution is more highly skewed than the U.S. distribution (NY has relatively more very high-income people), or that New Yorkers will have higher state and local tax deductions than the U.S. average because NY is a high-tax state and because higher-income people are more likely to itemize, and so on.
+
+We want to explore several approaches to creating weights that may be better than the naive approach (although we may start with the naive approach and adjust the weights created).
+
+## Approaches to creating state-specific weights for the file
+
+### General approaches
+The problem of creating state files from national files is not unique to income taxes. National statistical agencies, survey researchers, geography researchers, and others often try to create subnational microdata files from national economic and demographic data survey files in ways that reflect or conform to subnational statistics. Depending on the field involved (economics, geography, survey research), the general approaches have been called small-area estimation, spatial microsimulation modeling, population synthesis (not to be confused with synthetic data creation), and several other terms. The specific methods have been called raking, reweighting, survey calibration, post-stratification, and several other terms. The important papers I have found on these topics are in Zotero; you should not need to read them for this project (but feel free to).
+
+ALL of the methods require what is often called "auxilliary" summary data: aggregate statistics or "targets" for a subnational area, such as the number of households, average income of households, and perhaps similar statistics by income range. For tax data, we will have many targets for individual states -- my estimate is about 400-700 targets per state. It may not be possible to hit all targets, but coming close will be important for creating a file that is useful for tax policy analysis. In this project (*Task 2*), we will examine a much smaller set of targets, because we are focused on evaluating methods in a controlled environment rather than on implementing them in our wild environment (the PUF).
+
+In addition to auxilliary summary data, some methods also require auxilliary microdata: microdata that may not be from the survey in question (in our case, the PUF), but that have some similar characteristics and can help in developing weights.
+
+Creating data for tax policy analysis is more demanding, in my opinion, than what geographers and others have been doing. We want to know answers to questions that require complex manipulations of the data (calculations of tax liability under different policies), and that are consistent with what we know from the auxilliary summary data. The methods they use, while fast, often do not pay attention to some things that are important to us, such as getting aggregate values right. Many of their methods are focused on getting aggregate counts (such as the number of tax returns) right and letting the aggregate values (such as the weighted value of wages) fall where they may. This may get the numbers close, but not close enough. (The focus on counts rather than values is not universally true, but I have not seen any applications in which people have tried to solve problems as complex and detailed as we have.)
+
+### Specific methods in concept
+In a minute I'll explain why a controlled environment is important, but first let's look at specific methods.
+
+I divide the methods into the following categories:
+
+1. **Reweighting:** Starting with a set of weights believed to be useful, and then adjusting them so that the sample, when summarized with the adjusted weights achieves or comes close to the targets, while minimzing a penalty function that increases when the weight adjustments are larger. **This relies on the assumption that the unadjusted weights are "good" in some sense and so we don't want to change them too much from their starting values.** Is that the right assumption when creating a state file? Maybe not. States are different from each other. A New York file should have a lot more rich people than an Alabama file, and so the weights of those people should be much larger. Maybe we don't necessarily want to penalize large weight adjustments.
+
+2.  **Creating weights from scratch:** What if the unadjusted weights we have on the file simply aren't any good, or what if we don't have any weights at all? This was a question raised by Max Ghenis when we were working on synthetic data. When we created synthetic records (e.g., records with synthetic wages, interest income, state and local tax deductions), we also created synthetic record weights but we weren't sure how good they were. Max wondered if it would be possible to throw the synthesized weights away and instead create weights from scratch that attempt to hit our targets. I used this approach in the first iteration of our synthetic data (details below). However, I was never comfortable with it - I thought we probably were throwing useful information away - and so in the current version of synthetic data I used a reweighting approach. Still, the idea requires evaluation: Could weights constructed from scratch be better than the reweighting approach, at least in some circumstances? We'll take a first step toward answering that in *Task 2*; there could be an intersting paper or two in here if you are interested.
+
+3.  **"Sharing" national weights to subnational areas:** Under this approach, we're not trying to construct weights for just one subnational geographic area. Instead, we are trying to construct weights for ALL subnational areas, by taking the weights on our national file and deciding what share of each weight should be apportioned to each area.
+
+    + Typically (but perhaps not necessarily) these shares would add to 1 for each record. For example, we might apportion record #7 in the national file as 12% to California, 5% to New York, and 83% to all other states, and we might apportion record #35 as 13% to California, 8% to New York, and 79% to everywhere else.
+    + There is more than one way to do this, as I will discuss below. One approach is to use auxilliary data to estimate the probability that each record belongs to each subnational area and to treat those probabilities as shares.
+    + The adding-up restriction is an important question. You can see how for some purposes, it would be important to ensure that every record adds to the national total for that record. Suppose, for example, that a policymaker says, ok you've run Tax-Calculator to examine the national impact of changing the law on the State and Local Tax (SALT) deduction. How are taxapayers in each state affected by this federal tax change (i.e., the federal impact in each state), by income range? If we had created 50 state files by method 1 or 2 above, there is no reason to believe that the sum of the 50 states equals the national total calculated here unless we did a post-weighting adjustment to force the states to add to the nation. But if we share each record to the 50 states, with the requirement that each record's share adds to 1, the sum of the state estimates will equal the national estimate. (This is similar to the problem that economic forecasting firms such as Moody's face when forecasting the economy in 50 states and also in the nation. And it is similar to the problem that statistical agencies such as the Bureau of Economic Analysis face when they estimate, for historical periods, personal income in each state and in the national, using slightly different data sources.)
+    + There is a trade-off here: To get the benefit of states adding to the nation, we may have to accept lower quality results for some individual states than we would have if we did not impose an adding-up restriction. Part of *Task 2* could be exploring this trade-off (how large is it, and is it larger for some things than for other things?), although we will see how much time we have for this.
+    
+### Specific methods -- a few details
+#### Reweighting
+This is very similar in concept to the reweighting analysis you did for TaxData, although the purpose there was to construct weights that allow the file to represent a future year rather than a different geography. For this purpose, let's start out using IPOPT via `ipoptr`, and do it in R. In the future (or if you have time in this project) we could consider other solvers such as CVXOPT. IPOPT has several great qualities. I have looked at many other solvers and most do not have all of these qualities. I do not know a lot about CVXOPT, although I know it has some of the good qualities of IPOPT -- CVXOPT could be as good as or better than IPOPT, and it could be important if it is hard to port IPOPT solutions to python.
+
+* Nonlinear objective function. More flexible than an LP-only solver; we will want the ability to solve NLPs.
+* Bounds on the x variables. Important because we cannot allow negative weights and because we might think some adjustments are simply too large and we may want to prevent them rather than penalize them.
+* Inequality constraints. Important for allowing ranges around our constraints if we can't hit them exactly or if we don't like the results when we try to hit them exactly.
+* Sparse matrix methods. Allows IPOPT to solve huge problems.
+* Choice of linear solvers. NLP solvers spend a lot of time solving systems of linear equations. IPOPT allows different linear solvers to be compiled with it, including the Harwell Subroutine Library (HSL) solvers, which are fast, robust, and flexible, allowing choice of linear solver, including one solver that works out of memory and can solve massive problems. 
+* Interior point method. Seems to be very fast for this kind of problem.
+* Open source. Therefore appropriate for the Open Source Policy Center.
+
+The combination of these characteristics makes IPOPT flexible, fast, robust, and able to handle huge problems. I have used it to solve a problem with more than 10 million variables and hundreds of thousands of constraints in under 30 minutes on a commodity PC. It has downsides, too: Works best with 1st and 2nd analytic derivatives and thus objective and constraint functions should be twice differentiable; not easy to install so may not be easy to get to work with python (although I suspect this is solvable).
+
+I do not have strong opinions about the best objective function and that could be part of our evaluation. In general reweighting relies on the idea that the initial weights are good and that we should penalize differences from those weights. Also, like least squares, we may think that large differences should be penalized disproportionately compared to small differences. 
+
+Another important consideration is that the objective function should be convex, as all of the functions we have considered are. The reason convexity is important is that it guarantees that a local optimum will be a global optimum. ALL NLP solvers only guarantee that they will find a local optimum. If there are multiple local optima, there is no reason to believe that the NLP solver will find the global optimum - unless the objective function is convex. (For non-convex objective functions, global-optimum-seeking solvers  often use multiple starting points and a grid search to hop around in the potential solution space to look for the best solution. This does not guarantee a global optimum, but increases the probability of finding a global optimum or a very good local optimum. It is very time consuming. We won't do this because we have good objective functions that are convex.)
+
+Beyond these general rules I don't think there is a simple "best" objective function in concept. However, because we will need to develop file-quality evaluation criteria in this project, time permitting we could evaluate different objective functions. This is not a high priority for me but could be useful if we have time.
+
+#### Weighting from scratch
+To create weights from scratch, I have taken the following approach:
+
+* From auxilliary data, establish a set of targets for the desired file - for example, number of weighted returns by filing status (married, single, etc.), number of weighted returns by income range, value of weighted wages by income range, value of weighted capital gains by income range, and so on. 
+* Construct an objective function that penalizes differences between these targets and values calculated using a set of weights we choose for the file.
+  + For example, let's say we have only three targets: total weighted returns, total weighted wages, and total weighted capital gains. A simple objective function would be the sum of squared differences: 
+  
+      (returns_target - sum(weights[i]))^2 + 
+      
+      (wage_target - sum(weights[i] * wages[i]))^2 +
+      
+      (capgains_target - sum(weights[i] * capgains[i]))^2
+      
+  + In practice there would be many more elements in the objective function (400-700 in the state tax problem), so it can get quite complex.
+  + We might want to penalize some differences more than others. For example, we might think it is more important to be close to the targets for returns and wages than for capital gains. In that case, we might assign subjective priority values to each element of the objective function. For example, we might think that returns and wages each are twice as important as capital gains. Furthermore, because the values are all different, we might want to scale each element of the objective function so that a large variable such as wages (several trillion dollars) is not given disproportionate weight because of its units than a variable such as the number of returns which is only about 150 million. Thus, assuming we index each element of the objective function by j, where in this case j ranges from 1 to 3, the function might look more like:
+  
+      priority[1] * scale[1] * (returns_target - sum(weights[i]))^2 + 
+      
+      priority[2] * scale[2] * (wage_target - sum(weights[i] * wages[i]))^2 +
+      
+      priority[3] * scale[3] * (capgains_target - sum(weights[i] * capgains[i]))^2  
+      
+      where priorty would be a vector such as (2, 2, 1) giving twice as much weight to returns and wages as to capital gains, and scale would be a vector designed to equalize the importance of returns, wages, and capital gains.
+  + That is essentially what I did in early versions of the synthetic data project to construct base-year weights for the data. As noted, for the state tax data project, the objective function could have hundreds of elements.
+  + Note that there are no constraints here. In concept, we could add constraints. For example, we could say that wages need to be within 1% of the target and capital gains need to be within 5% of the target. In theory, if we did this, we could remove the subjective priorties in the objective function and instead have a set of subjective constraints. I looked into this a little bit but it seemed like a lot of work and it seemed like it would really slow the solution time down. It is certainly possible to explore this in *Task 2* but it is not a high priority to me so I would only do this if you are interested and have time.
+  + I did put bounds on the variables, so that no weights (the x's to be solved for) would be less than zero.
+  + Note also that this objective function is not convex (I believe - it would be great if you can confirm or refute this). Assuming this is correct, it means we don't know whether we will achieve a global optimimum and we may need to consider alternative solution techniques.
+  
+  
+Initially I tried to solve this using IPOPT (searching for a local optimum) but I found it took an extraordinarily long time. I then used the package `nloptr` (written by the same person as `ipoptr`, Jelmer Ypma), which provides access to a well-known suite of NLP solvers, NLOPT, either through a common interface or through separate calls to each solver using its own calling interface. Because there are no constraints in this problem, a fair number of solvers are available (fewer solvers are available that handle constraints).
+
+I concluded that `mma` (the method of moving asymptotes) was the best solver available in `nloptr` and I limited the number of iterations to 500, which still was time consuming. Usually it did not find a local optimum but it did find good non-optimal solutions.
+
+I also tried simulated annealing, which takes a completely different approach. The basic idea behind simulated annealing is:
+
+* Define an initial solution - a set of weights for the records such that the weights sum to the targeted population total. For example, the initial weights could be based on a uniform proportional adjustment to the national weights as in our 6% example above, or they could be set equal for all records, or something else. I don't think the starting point matters much.
+* Compute the objective function for these initial weights and save it as the CURRENT solution and as the BEST solution. It is important to note that we have three kinds of solutions: the BEST solution, which always is best to date, the CURRENT solution, which may not necessarily be the best ever but is where we start from when we look for our next solution, and the NEW solution, which is a trial solution that we compare to BEST and CURRENT.
+* Now, iterate:
+  + Randomly pick a subset of weights in the CURRENT solution that we will reduce. Compute the amount that the individual weights in this subset may be reduced, according to some function. (In early iterations we might allow a large number of weights to be reduced, and we might allow them to be reduced by a lot. In later iterations we might only allow much smaller reductions in weights.) Compute the total amount of reduction (the sum of reductions across the weights to be reduced).
+  + Randomly pick a different subset of weights in the CURRENT solution to be increased. Spread the total reduction from the previous step  across the weights to be increased. (This maintains population totals.)
+  + We now have a NEW solution.
+  + Compute the objective function value for the NEW solution using these weights.
+  + Compare the NEW objective function value to the BEST value so far. If the NEW objective function is better than the previous BEST, save the weights and the objective function value from the NEW solution as the BEST solution to date.
+  + Decide whether to save the NEW solution as the CURRENT solution. (Remember, it is the CURRENT solution that we modify at the start of each iteration, not the BEST solution. In other words, at each iteration, we will look for a new solution that is near the CURRENT solution.) Compare the NEW objective value to the CURRENT objective function value:
+    + If the NEW solution is better than the CURRENT solution, save the NEW solution as CURRENT. Thus, we will look near this next time.
+    + If the NEW solution is worse than the CURRENT solution, randomly decide whether to save it as CURRENT in a fashion that makes keeping a worse solution highly likely in early iterations and highly unlikely in later iterations. Thus, early in the search process, we will hop around a lot in the solution space looking for solutions, while late in the solution process we will tend to be looking near the BEST solution to date. This is where simulated annealing gets its name - as I understand it, as a metal cools down atoms diffuse at a slower and slower rate and it approaches an equilibrium. A variable used in deciding whether to keep the NEW solution typically is called "temperature" - as this variable decreases (as the problem cools), the new solutions tend to be closer to an equilibrium solution.
+  + Repeat until stopping criteria are met (e.g., # of iterations, or small objective function value).
+  
+The ability of simulated annealing to look near solutions that are worse than prior solutions allows it to jump over hills in a solution space that has multiple minima, perhaps getting out of a rut that would keep other solvers looking in the same valley until finding the lowest spot in the valley even though not the global minimum - simulated annealing could jump over to another valley, particularly early in the solution process, and see if it finds a lower minimum over there or elsewhere in the solution space (always keeping track of the best value to date). Thus, simulated annealing tends to seek a global optimum but there is no guarantee it will find it.
+  
+I wrote my own simulated annealing function. I based it on a function in an R package. That function had some inefficiencies so I made it more efficient. Also, I added a few heuristics to allow me to decide (1) how many weights to increase and how many weights to reduce on each iteration (rather than limiting it to just one weight each time, which would take forever), and (2) how much to change these weights. I wrote these heuristics so that it will change more weights and by greater amounts in early iterations than in later iterations.
+
+My function still takes far more time than I would like. However, if it were to produce truly great solutions (I don't know that it will), it could be worth the time. There may be better (faster) simulated annealing functions on the internet, but I did not find one.
+
+Simulated annealing solutions, unlike mma solutions, tend to have many weights that are zero.
+
+
+#### OPTIONAL (we may not have time): Sharing records to the states
+A third approach is to share each record's weight across the 50 states (or across some individual states and an "all other" category), based on some measure of liklihood that a record "belongs to" or is similar to a particular state. There is more than one way to do this (and I have not done it yet, except in an experimental sense). 
+
+In general, I think it would involve a first stage and, possibly, a second stage. I think it is realistic for us to examine a first-stage approach in this project but probably not the second stage unless we had a lot more funding. Still, for completeness, I describe both stages.
+
+1. In the first stage we would:
+   + Construct a method (discussed in a minute) that can predict the liklihood that a record belongs to each of the states (a probability that the record is from NY, another probability for CA, another for VT, etc.). Presumably the prediction probabilities for each record would add to 1 or would be scaled so that they add to 1. (In other words, this is model construction.)
+   
+   + Apply this model to the data to predict the 50 probabilities for each record.
+   
+   The weights for each record will sum to 1 and so the sums of weighted values across all records and states will match estimated national totals. However there is no reason to believe that the sums of weighted values for each state state will equal our targets for those states, because we haven't done any targeting yet. Thus, we satisfy the goal of having a file that can apportion results of a federal tax policy analysis across the 50 states in an exhaustive way (the 50 states add to the national totals). However, the results for individual states are not necessarily consistent with other data we may have for those states.
+   
+2. In the second stage, we would adjust the first-stage weights so that we hit or come close to our targets for each state while constraining each record's weights to sum to 1. This is a large problem that also is very demanding in terms of target setting:
+ 
+  + Let's say we have a file with 500,000 records (the synthetic PUF has 700+k records). In the first stage we constructed 50 weight-shares for each record where the shares sum to 1.
+  
+  + Let's say we have 200 targets for each state (a realistic number 20 variables to target, times each of 10 income ranges). Thus, we have 10,000 target constraints (200 x 50). This could be quite demanding for us if we are trying to hit forecasted amounts rather than historical data, as we would have to make 10,000 forecasts. But anyway...
+  
+  + In addition, we would have 500,000 adding-up constraints -- the weight shares on every record must add to 1.
+  
+  + We need to solve for 50 adjustment factors for every record (an adjustment factor for each weight-share) while satisfying the constraints.
+  
+  + Thus, the problem has 25 million variables (500,000 records x 50 weight-share adjustment factors per record) plus 510,000 constraints. Believe it or not, this is solvable in IPOPT using an appropriate HSL linear solver but it probably is beyond what we can do in this project. As I said, I mention this mostly for completeness.
+  
+If we were to do both stages, we would create a file with 50 weights per record that add up to the orignal weight on the national file, for every record, and that satisfies 200 constraints (targets) per state (10,000 in total). Whether it is a high-quality file or not is another matter.
+
+If we were to do only the first stage, we would have a file with 50 weights per record that add up to the orignal weight on the national file, for every record. It might also be reasonably close to the targets for individual states because the 50 weights were created by a model that took into account the characteristics of each state, but we don't really know that.
+
+In this project it should be practical to do the first stage using one or more methods and evaluate the file quality in comparison to other approaches. It would allow us to ask the question, does the benefit we get from satisfying the adding-up requirement outweigh the likely cost, in lower file quality for individual states?
+
+##### How would we create a model that shares weights across states? 
+How we create a model that apportions each record to 50 states will depend upon the auxilliary data we have, in particular whether we have microdata on the 50 states or whether we only have summary data.
+
+1. Suppose we have microdata for the 50 states, with state codes, that is similar to the tax data we have but perhaps cannot be used for tax analysis. (For example, perhaps it is too small a sample.) Call this File B. In that case we might be able to:
+   + Build a model of the probabilities that any given record is from each state (e.g., a multinomial logit model), where the probabilities on each record sum to 1,
+   + Apply this model to the actual data (for which we do not have state IDs - call this File A -- for example, the PUF) to predict the probabilities that each reord in File A belongs to each state.
+
+This has been done before (see Zotero). Also, the Treasury paper I mentioned used a variant of this approach. Although they had a File B microdata file of tax returns with state identifiers, they did not build a multinomial logit model. Instead, as I recall, they obtained highly detailed cross tabulations of their File B data by state, income range, and other fine groupings. They then used the state relative frequencies within fine groups to apportion each File A record to the 50 states. I don't think they said why they used this approach rather than multinomial logit but they said they thought this method was less sensitive to outliers than other methods.
+
+These approaches, by design, ensure that each record's state-apportioned weights add to the national weight for the record.
+
+2. Suppose we do not have microdata for the states but instead only have summary data. (This is the situation we are in.)
+We might have several options, but I haven't thought about this carefully enough. You could make a major contribution here if you come up with better approaches.
+
+Here are a few possible approaches:
+
+    + Two-step brute force approach: Instead of building in the requirement from the start that the 50 state weights for each record add to the national weight, we could do this in two stages. (a) Run 50 separate analyses or optimizations, each designed to come up with weights for a single state. (b) adjust those weights (50 states x perhaps 500k records = 25 million weights), imposing an adding-up restriction on every record and having constraints for every state, while minimizing a penalty function based on size of adjustment. It is similar to the large problem described above.
+    
+    + Try to create a multinomial logit model (or some other classification model) using the state-identified summary data (a low-information "File B"), and apply the model to the non-state-identified microdata.
+    
+    + Do something similar but use distance measures (e.g, Euclidean distances from each microdata record to each corresponding state summary group -- e.g., income group) and use distances to estimate relative probabilities for each state.
+    
+    + Go straight to a large-scale optimization function where we (a) establish initial weights for every record and (b) adjust those weights so that the weighted file comes close to selected targets or constraints (e.g., 200 targets x 50 states = 10k targets), with an adding-up restriction for every record (500k restrictions), minimizing a penalty function. One approach that Dan Feenberg of NBER has recommeneded is to maximize entropy rather than minimize a typical objective function. I have written code to do this. But this is a very large problem.
+    
+
+## Why it is important to have a controlled environment in which to evaluate these approaches
+Right now, we do not have the luxury of having a microdata file of tax returns on the individual states - we only have summary data for the states (Historical Table 2).
+
+
+## Creating an environment in which to evaluate these approaches
+
+The major steps are to:
+1. Prepare an SQLITE database with person-level data
+2. Query the SQLITE database to create a subset that we will use in analysis.
+
+
+# Start of the program
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo=FALSE, warning=FALSE, message=FALSE)
+```
+
+
+```{r system_specific_info, include=TRUE}
+# change information here as needed
+destdir <- "d:/data/" # ACS raw data and the rds file we later create
+# OR
+# destdir <- "D:/Data/CensusACS/20175year/csv_pus/"
+
+dbdir <- paste0(destdir, "rsqlite/") # location for sqlite database to be created
+dbf <- paste0(dbdir, "acs.sqlite") # database name; database will be created (if not already created) and used below
+
+```
+
+
+```{r includes, include=FALSE}
+source(here::here("r/includes", "libraries_yy.r"))
+source(here::here("r/includes", "functions_yy.r"))
+source(here::here("r/includes", "functions_optimization_yy.r"))
+
+```
+
+
+# ONETIME: Create an SQLITE database of all data for 15 million person records in the 2017 5-year ACS. Save selected variables to an RDS file.
+All of the chunks below have eval=FALSE as you will only want to run them once.
+
+Steps:
+
+1. Download the ACS zip file (Note: the person file archive is about 2.3 gb.)
+
+2. Unzip the ACS archive and create the SQLITE database
+
+3. Create a permanent R rds data file that has all persons but only a selection of variables that we are likely to care about. This will make it easier to create random subsets of the data.
+
+
+## Download the ACS zip file
+```{r ONETIME_downloadACS, eval=FALSE}
+# We will download the person records for the US from the latest 5-year ACS data.
+# This file is ~ 2.3 gb. If you don't want to download it I can provide you with an extract.
+
+acsurl <- "https://www2.census.gov/programs-surveys/acs/data/pums/2017/5-Year/"
+
+# acshfn <- "csv_hus.zip" # household file
+acspfn <- "csv_pus.zip" # person file
+
+acsfn <- acspfn # choose one of the files to download
+
+url <- paste0(acsurl, acsfn)
+
+(destfile <- paste0(destdir, acsfn))
+
+download.file(url, destfile=destfile, mode="wb")
+
+```
+
+
+## Unzip the ACS archive and create the database
+Steps:
+
+1. Extract the 4 csv person files and the documentation file. (While it is possible to read the csv files without unzipping, I have found that it is not efficient.) Each csv file is a mutually exclusive subset of the total.
+
+2. Define column types for variables in the csv files.
+
+3. Read the 4 csv files and concatenate to create a single SQLITE table with all of the person data. (If we had reason to use the household data, we would download that and create a household table within the SQLITE database, also. But we don't, at least now.)
+
+
+```{r ONETIME_convertACS_sqlite, eval=FALSE}
+# CAUTION: creating the sqlite database for the 2017 5-year ACS can take about half an hour, AFTER downloading the 
+# ~ 2.3 gb data file. Having the full database available is useful, however, as it will make it easy for you
+# to construct different-sized data subsets for experimentation.
+
+#.. 1. Unzip the downloaded data file ----
+(destfile <- paste0(destdir, acsfn))
+unzip(destfile, list=TRUE)
+
+(files <- str_subset(unzip(destfile, list=TRUE)$Name, ".csv") %>% sort)
+
+# df <- read_csv(unz(destfile, files[1]), n_max=10) # we can read the zipped files directly but this is not efficient
+
+system.time(unzip(destfile, exdir=str_sub(destdir,1, -2)))  # this will take ~1-2 minutes
+(paths <- paste0(destdir, files))
+
+# df <- read_csv(paths[1], n_max=10)
+# glimpse(df)
+
+# Now we are ready to create the database
+
+#.. 2. Define column types for the data ----
+# build a compact specification of col types with:
+# c = character, i = integer, n = number, d = double, l = logical, D = date, T = date time, t = time,
+# ? = guess, or _/- to skip the column
+vars <- read_csv(paths[1], n_max=0) # get the default structure
+(vnames <- names(vars))
+
+# most ACS variables should be integer, but a few will be character and a few double
+
+# make integer our default value, then override for certain vars
+ctypes.default <- rep("i", ncol(vars))  # or use i
+
+# define vectors that we want to be double
+dvars <- c("ADJINC", "RETP", "INTP","SEMP", "SSIP", "SSP", "WAGP", "PERNP", "PINCP",
+           str_subset(vnames, "PWGT"))
+
+# now character vars
+cvars <- c("SERIALNO", "RT", "NAICSP", "OCCP02", "OCCP10", "OCCP12", "SOCP00", "SOCP10", "SOCP12", "CITWP05")
+
+# create ctypes - the compact specification of col types
+ctypes <- ctypes.default # start out with the default specification, and then selectively change to double or character
+ctypes[which(vnames %in% dvars)] <- "d"
+ctypes[which(vnames %in% cvars)] <- "c"
+ctypes <- paste0(ctypes, collapse="")
+ctypes
+
+#.. 3.Read the 4 data files and write them to a single large sqlite table in an sqlite database ----
+con <- dbConnect(RSQLite::SQLite(), dbf)
+tname <- "acs2017_5year"
+
+nmax <- -1
+# nmax <- 1000
+if(dbExistsTable(con, tname)) dbRemoveTable(con, tname)
+for(file in paths) { # takes about a half hour on my machine
+  print(file)
+  t1 <- proc.time()
+  print("reading...")
+  df <- read_csv(file, skip=1, col_names=str_to_lower(vnames), col_types=ctypes, n_max=nmax)
+  print(nrow(df))
+  t2 <- proc.time()
+  print(t2 - t1)
+  print("writing....")
+  dbWriteTable(con, tname, df, append=TRUE)
+  t3 <- proc.time()
+  print(t3 - t2)
+}
+
+# check that we can query the database
+dbListTables(con)
+dbListFields(con, tname)
+
+selstring <- paste0("SELECT * FROM ", tname, " LIMIT 1")
+names(dbGetQuery(con, selstring ))
+
+selstring <- paste0("SELECT * FROM ", tname, " LIMIT 5")
+tmp <- dbGetQuery(con, selstring)
+glimpse(tmp)
+
+selstring <- paste0("SELECT COUNT(*) FROM ", tname)
+dbGetQuery(con, selstring )
+
+dbDisconnect(con)
+# dbDisconnect(con, shutdown=TRUE)
+
+```
+
+
+## Query database and create an RDS file with all persons and a selection of variables
+Steps:
+
+1.  Get state FIPS codes and abbreviations from an external file
+2.  Query the ACS database we created to get all records and the desired variables
+3.  Add state abbreviations to the file
+4.  Convert money variables (e.g., income) to 2017 dollars
+5.  Save as an RDS file
+
+
+```{r ONETIME_createPersonRecs, eval=FALSE}
+
+# Get FIPS codes and state abbreviations from the tigris package so that we can put state abbreviations on the persons file
+# data(package="datasets")
+codes <- unique(tigris::fips_codes %>% select(state, state_code) %>% mutate(state_code=as.numeric(state_code)))
+
+# read and save a file with a few key income variables, for ENTIRE population (15m records)
+# will use this later to construct samples we want
+# add certain useful information as well
+
+# identifying variables and other non-income variables:
+#   serialno -- housing unit serial number, so that we can link to housing-unit (household) data if we want
+#   sporder -- person order within household (serialno and sporder together uniquely identify persons)
+#   st -- state fips code
+#   pwgtp -- person weight, an integer
+#   adjinc -- adjustment factor because a record can come from any of 5 years (2013-2017), to convert income variables
+#             to 2017 values; must be divided by 1e6
+
+# income variables we want (there are more but this could be enough for our purposes):
+#   intp interest income 
+#   pap public assistance income
+#   pincp total person income
+#   retp retirement income
+#   ssip Supplemental Security Income
+#   ssp Social Security income
+#   wagp Wages
+
+# connect to the database
+acsdb <- dbConnect(RSQLite::SQLite(), dbf)
+tname <- "acs2017_5year"
+dbListTables(acsdb)
+dbListFields(acsdb, tname)
+
+# define what we want to get
+getall <- tbl(acsdb, tname) # dplyr does lazy loading, so this does not really grab full table
+str(getall)
+glimpse(getall)
+
+incvars <- c("intp", "pap", "pincp", "retp", "ssip", "ssp", "wagp")
+persons <- getall %>%
+  select(serialno, sporder, st, pwgtp, adjinc, sex, agep, mar, incvars)
+# NO: tail(persons) # tail not supported
+# DON'T USE glimpse on persons in this situation - it takes a long time
+# instead, create df persons2 and use glimpse
+
+# collect the data, make some adjustments
+a <- proc.time()
+persons2 <- collect(persons, n=Inf) %>%
+  mutate(stabbr=factor(st, levels=codes$state_code, labels=codes$state),
+         adjinc=adjinc / 1e6) %>%
+  select(serialno, sporder, st, stabbr, pwgtp, adjinc, everything()) %>%
+  mutate_at(vars(incvars), ~ . * adjinc)
+b <- proc.time()
+b - a # 90 secs
+  
+glimpse(persons2) # 15 m people
+count(persons2, sporder)
+system.time(saveRDS(persons2, paste0(destdir, "persons.rds"))) # 60 secs
+
+# how long does it take to read this?
+# system.time(tmp <- readRDS(paste0(destdir, "persons.rds"))) # 14 secs
+
+# all done
+rm(persons, persons2, persons3, codes)
+dbDisconnect(acsdb)
+
+# now we have a fast slim data file we can use as needed
+
+```
+
+# Examine different approaches to creating a state file
+
+## Extract a subset of persons from the slim permanent file we created
+This will be our test environment. We want it big enough to allow us to examine realistic issues, but small enough to work with quickly.
+
+We'll select a few states and a subset of records. Keep adults only.
+
+
+```{r get_extract, include=FALSE}
+system.time(persons_all <- readRDS(paste0(destdir, "persons.rds"))) # about 30+/- secs
+glimpse(persons_all)
+ns(persons_all)
+
+# define desired states and number of records, then create extract
+sts <- c("CA", "NY", "TX", "IL", "FL") # 5 large very different states
+n <- 10e3
+set.seed(1234)
+samp <- persons_all %>%
+  filter(stabbr %in% sts, !is.na(pincp), agep>=18) %>%
+  sample_n(n) %>%
+  select(-st) %>%
+  mutate(otherincp=pincp - (intp + pap + retp + ssip + ssp + wagp))
+
+glimpse(samp)
+ht(samp)
+summary(samp) # make sure there are no NAs -- there shouldn't be
+
+count(samp, stabbr)
+count(samp, sex)
+quantile(samp$agep)
+  
+```
+
+
+## Create some targets (constraints) to try to hit
+Get file totals by state and income group that can be used as constraints.
+
+Steps:
+
+1. Create an income-group variable
+2. Get weighted sums and counts, by state and income group, of each income variable. These are potential targets.
+3. Create a "noisy" version of the same in case we want to hit alternative targets
+
+
+```{r get_file_totals, include=FALSE}
+glimpse(samp)
+samp_clean <- samp %>%
+  mutate(n=1 / pwgtp, # the sampling ratio -- when multiplied by weight, will yield 1
+         pop=1,
+         incgroup=ntile(pincp, 10)) %>%
+  # get an indicator for each income variable
+  mutate_at(vars(intp, pap, pincp, retp, ssip, ssp, wagp, otherincp), list(n = ~ as.numeric(. !=0)))
+
+glimpse(samp_clean)
+
+#.. define constraints data: 1 per income group per state ----
+constraints_true <- samp_clean %>%
+  group_by(stabbr, incgroup) %>%
+  summarise_at(vars(n, pop, pincp, intp, pap, retp, ssip, ssp, wagp, otherincp, ends_with("_n")),
+               list(~ sum(. * pwgtp))) %>%
+  ungroup
+# write_csv(constraints_true, "d:/check.csv") # see if the numbers look right
+
+# add a different amount of noise to each constraint
+set.seed(1234)
+noise <- .02
+constraints_noisy <- constraints_true %>%
+  gather(variable, value, -stabbr, -incgroup, -n) %>%
+  group_by(stabbr, incgroup, n, variable) %>%
+  mutate(value=value * (1 + rnorm(n(), 0, noise))) %>%
+  ungroup %>%
+  spread(variable, value) %>%
+  select(names(constraints_true)) # keep the same order
+
+```
+
+
+## TEST: Create constraints for a single state, a single income range and just a few variables
+This is a simpler problem than what we ultimately want to solve. Its purpose is to check that our functions and method work.
+
+Define constraints (targets) for a single state and income group.
+
+Get the data subset we will use to try to hit those targets -- records in that income group, for all states (we will pretend we don't know what state each person in this subset is from).
+
+```{r test_constraints}
+
+# create a constraints data frame with true or noisy constraints
+constraints_df <- constraints_true
+# constraints_df <- constraints_noisy
+
+#.. define cvars, consdata and sampdata for a specific subset of constraints ----
+# cvars has the names of the constraint variables
+# consdata will have 1 record with all constraints for the subset
+# sampdata will have all records in the subset, including constraint vars and identifying/other vars
+
+# constraint variables
+# (cvars <- setdiff(names(constraints_df), c("stabbr", "incgroup", "n")))
+# ssip_n is the weighted number of people with SSI personal income (Supplemental Security Income)
+(cvars <- c("pincp", "intp", "pap", "ssip_n")) 
+
+# look at a subset that we'll want to use
+st <- "NY"
+ygrp <- 3
+
+constraints_df %>% filter(stabbr==st, incgroup==ygrp) %>% select(cvars) #
+samp_clean %>% filter(stabbr==st, incgroup==ygrp) %>% select(cvars) %>% ht
+
+# multiplying 
+consdata <- constraints_df %>% filter(stabbr==st, incgroup==ygrp) %>% select(cvars)
+sampdata <- samp_clean %>% filter(incgroup==ygrp) %>% select(serialno, stabbr, pwgtp, cvars)
+count(sampdata, stabbr)
+
+# compare contraints to true data targets to verify whether consdata has noisy or true constraints
+bind_rows(consdata,
+          constraints_true %>% filter(stabbr==st, incgroup==ygrp) %>% select(cvars))
+
+sampdata
+
+# create initial weights -- scale the person weight pwgtp so that total number is same as true
+# (it is possible to define better initial guesses but probably not worth the effort)
+(target <- sum(samp_clean %>% filter(incgroup==ygrp, stabbr==st) %>% .[["pwgtp"]])) # 3950
+(current <- sum(sampdata$pwgtp)) #21727 -- the sum is too large because the sample includes all geographies
+
+# define weight starting values for optimization routines, wts0
+wts0 <- sampdata$pwgtp * target / current
+sum(wts0)
+
+# verify that we can call the objective function
+objfn(wts0, sampdata, consdata)
+
+# verify that we can calculate constraints at these weights
+calc_constraints(wts0, sampdata, names(consdata))
+# compare to true constraints
+consdata
+calc_constraints(wts0, sampdata, names(consdata)) / consdata # not bad on total income but intp, pap, ssip_n fall short
+
+```
+
+
+### TEST: Calibrate function from survey package
+```{r calibrate}
+# call calibrate from the direct function we created for that purpose
+calib1 <- calibrate_nloptr(wts0, sampdata, consdata)
+wts_calib1 <- unname(weights(calib1))
+sum(wts_calib1) # we don't hit the targeted number of returns exactly because we did not make it a constraint
+target
+
+# how did we do compared to constraints and initial values?
+bind_rows(consdata,
+          calc_constraints(wts0, sampdata, names(consdata)),
+          calc_constraints(wts_calib1, sampdata, names(consdata)))
+
+objfn(wts0, sampdata, consdata)
+objfn(wts_calib, sampdata, consdata) # desired objective function is close to zero although calibrate mins different function
+
+# verify that our wrapper works
+# calibrate does not minimize our objective function. It is very fast and requires few iterations.
+# Still it is useful for comparison.
+calib2 <- opt_wrapper(wts0, sampdata, consdata, method="calibrate", objfn=objfn, maxiter=10)
+str(calib2)
+wts_calib2 <- calib2$weights
+
+bind_rows(consdata,
+          calc_constraints(wts0, sampdata, names(consdata)),
+          calc_constraints(wts_calib1, sampdata, names(consdata)),
+          calc_constraints(wts_calib2, sampdata, names(consdata)))
+
+# yes, of course, we have the same result
+
+```
+
+### TEST: mma function from nloptr package
+```{r mma_nloptr}
+mma1 <- mma_nloptr(objfn, wts0, sampdata, consdata) # we need to pass it an objective function
+wts_mma1 <- mma1$par
+sum(wts_mma1) # we don't hit the targeted number of returns exactly because we did not make it a constraint
+target
+
+# how did we do compared to constraints and initial values?
+bind_rows(consdata,
+          calc_constraints(wts0, sampdata, names(consdata)),
+          calc_constraints(wts_mma1, sampdata, names(consdata)))
+
+objfn(wts0, sampdata, consdata)
+objfn(wts_calib, sampdata, consdata) # desired objective function is close to zero although calibrate mins different function
+
+# verify that our wrapper works
+mma2 <- opt_wrapper(wts0, sampdata, consdata, method="mma", objfn=objfn, maxiter=100)
+str(mma2)
+wts_mma2 <- mma2$weights
+
+bind_rows(consdata,
+          calc_constraints(wts0, sampdata, names(consdata)),
+          calc_constraints(wts_mma1, sampdata, names(consdata)),
+          calc_constraints(wts_mma2, sampdata, names(consdata)))
+
+```
+
+
+### TEST: simulated annealing
+```{r test_simann}
+
+# test the direct call
+set.seed(1234)
+a <- proc.time()
+simann1 <- sim_ann(objfn, wts0, sampdata, consdata, 
+                   p=2, niter = 1000, step = 0.1, 
+                   phase_iter=500, max_recshare=.3, max_wtshare=1)
+b <- proc.time()
+b - a
+# this will be very slow for large problems...
+
+str(simann1) # 7.86e-06 8.5e-08
+wts_simann1 <- simann1$best_weights
+sum(wts_simann1) # we don't hit the targeted number of returns exactly because we did not make it a constraint
+target
+
+# how did we do compared to constraints and initial values?
+bind_rows(consdata,
+          calc_constraints(wts0, sampdata, names(consdata)),
+          calc_constraints(wts_simann1, sampdata, names(consdata)))
+
+# verify that our wrapper works
+simann2 <- opt_wrapper(wts0, sampdata, consdata, method="simann", objfn=objfn, maxiter=1000)
+str(simann2)
+wts_simann2 <- simann2$weights
+
+bind_rows(consdata,
+          calc_constraints(wts0, sampdata, names(consdata)),
+          calc_constraints(wts_simann1, sampdata, names(consdata)),
+          calc_constraints(wts_simann2, sampdata, names(consdata)))
+
+```
+
+
+### TEST: multinomial logit
+The idea behind the multinomial logit approach, and other classification-probability approaches such as in the Fisher-Lin Treasury paper, is that we build a model from external data of the probability that a record in our sample (available) data is from EACH state, where for each record, the probabilities sum to 1 across the states. For example, if we have CA, FL, IL, NY, TX, then for record #17 (for example) in our availalable (sample) data, the probabilities might be (0.2, 0.1, 0.25, 0.15, 0.3).
+
+This has the nice quality that (a) it allows you to construct weights for every state, not just one (weight_state[j] = the total person weight * probability that the person is from state [j]), and (b) the state weights on every record add to the total so that you can produce results (policy simulations or whatever) where the sums of the state policy results equal the national policy results. (The downside, I think we will find, is that the results for any given state are not as accurate as we could obtain if we did the best weight construction we could for each state, without forcing the weights across states to sum to the total person weight, for every record.)
+
+To build this model, we need data that are somehow similar to our available (sample) data and a classification prediction method or some related method that can be used to construct classification predictions. In our test environment, we have the full 10,000 ACS person records from 5 states that we can use to predict probabilities that a record will be from a given state, and I'll use the multinomial logit method below. We then apply the model to construct probabilities that our sample records (which happen to be a subset of the full data set) are from different states. In the Fisher-Lin paper, they had auxilliary data "labeled" with state codes and they constructed  relative frequencies for cross-tabbed groupings of data, and then applied this "model" (the relative frequency in each crosstab group) to their sample data. (The sample data was richer than the auxilliary data, which is why they used it.) They said used this approach (relative frequencies for grouped data) because they thought it would be quite robust to the effects of outliers. (They did not contrast it with multinomial logit, as I recall, but I suspect they thought that any econometric method of predicting probabilities would have problems.)
+
+We can do the MNL approach here because we have good labeled auxilliary data to work with (the 10,000 ACS person records). However, for our real-world problem (the PUF), we will not be so lucky. We do not have individual records to work with, we only have summary data. Thus, part of this project, if you have time, is to construct a classification method approach that works when you only have summary auxilliary data. I do NOT do that below. 
+
++  One approach to doing this might be to create multiple "average" tax returns for each state (e.g., 1 return for each of the 10 income ranges we constructed in the ACS, for each of the 5 states in the 10,000 record ACS "universe") and then run a multinomial logit model on these constructed state-labeled average tax returns, and then applying this model to the unlabeled sample data. I am not optimistic this will produce good results.
+
++ A variant would be to construct the average returns, and then, for each record in the sample data, instead of using MNL, calculate standardized Euclidean distances from all of the records and use distances to construct probabilities.
+
++ I am sure there are possible alternative classification approaches but I have not thought much about this.
+
++ Yet another approach, really different conceptually, would be to build the best set of weights you could for each of the states using one of the methods above (calibrate/mma/ipopt, or simulated annealing). These weights would not, however, sum to total person weights for each record. So you would then construct a method to force them to satisfy that requirement, while hopefully not perturbing them too much and not forcing the results to stray too far from the constraints for each state. (Or you could do this in one fell swoop in Ipopt, doing a single optimization that targets, for example, 8 constraints in each of 5 states in each of 10 income ranges, and imposing 10,000 additional constraints requiring that the weights on each record sum to the total record weight - giving 10,400 constraints; ipopt can easily handle a problem of this size but I am not sure how well the other solvers will do).
+
+
+Anyway, all of that is for the future and maybe not in this project. For now, let's implement the multinomial logit method in the simple world in which we have state-labeled microdata to work with.
+
+```{r test_mnl1}
+# use the multinom function in the nnet package
+# per documentation, multinom calls nnet. The variables on the rhs of the formula should be roughly scaled to [0,1]
+# or the fit will be slow or may not converge at all.
+# other packages include mlogit and mnlogit; they are harder to use
+
+mnldata <- samp_clean %>% 
+  mutate(stabbr=as.character(stabbr),  # character to remove levels of states not in sample
+         sex=as.factor(sex), agep=as.factor(agep), mar=as.factor(mar)) %>% # just to be sure these are treated as factors
+  mutate_at(vars(pincp, wagp, intp, retp, ssip, ssp), list(~ (. - min(.)) / (max(.) - min(.)))) # scale continuous vars to [0, 1]
+glimpse(mnldata)
+summary(mnldata) # verify scaling
+
+
+# the better the model, using all data we have available in our state-labeled data that are also in our
+# sample data, the better the predictions will be
+frm <- stabbr ~ pincp + wagp + intp + retp + ssip + ssp + sex + agep + mar # simple formula
+
+frm <- stabbr ~ pincp + wagp + intp + retp + ssip + ssp +
+  sex + agep + mar + mar*agep + sex*agep
+
+library(nnet)
+mnl1 <- multinom(frm,
+                data=mnldata,
+                model=TRUE, # return the model that is estimated
+                MaxNWts=3000,
+                maxit=1000)
+str(mnl1)
+cbind(mnl1$fitted.values, rowSums(mnl1$fitted.values)) %>% ht # verify that probabilities sum to 1 on each record
+
+# get the NY weights
+wtsdf_mnl <- samp_clean %>%
+  mutate(prob_ny=mnl1$fitted.values[, "NY"],
+         wts_mnl=pwgtp * prob_ny) %>%
+  filter(incgroup==ygrp) %>%
+  select(serialno, sporder, stabbr,pwgtp, prob_ny, wts_mnl)
+wtsdf_mnl %>% ht
+
+wts_mnl1 <- wtsdf_mnl$wts_mnl
+objfn(wts_mnl1, sampdata, consdata)
+
+# as expected, this is pretty far from the mark:
+# first, we need a good model to make this work well
+# second, even then, we have no constraints in the model (we could use these weights as starting values for optimization of course)
+# and of course it will be worse if we only have labeled summary data rather than labeled microdata
+
+# verify that the wrapper works
+mnl2 <- opt_wrapper(wts0, sampdata, consdata, method="mnl", objfn=objfn, maxiter=1000)
+
+bind_rows(consdata,
+          calc_constraints(wts0, sampdata, names(consdata)),
+          calc_constraints(wts_mnl1, sampdata, names(consdata)),
+          calc_constraints(mnl2$weights, sampdata, names(consdata)))
+
+
+```
+
+
+### TEST: compare results across methods
+```{r test_compare}
+calib3 <- opt_wrapper(wts0, sampdata, consdata, method="calibrate", objfn=objfn, maxiter=10)
+mma3 <- opt_wrapper(wts0, sampdata, consdata, method="mma", objfn=objfn, maxiter=100)
+simann3 <- opt_wrapper(wts0, sampdata, consdata, method="simann", objfn=objfn, maxiter=5000)
+mnl3 <- opt_wrapper(wts0, sampdata, consdata, method="mnl", objfn=objfn, maxiter=1000) # mnldata must exist!!
+
+wts_df <- tibble(recnum=1:length(wts0),
+                 wts0=wts0,
+                 wts_calib=calib3$weights,
+                 wts_mma=mma3$weights,
+                 wts_simann=simann3$weights,
+                 wts_mnl=mnl3$weights)
+
+wts_long <- wts_df %>%
+  pivot_longer(cols=-recnum, names_to = "method", values_to = "weight")
+
+cor(wts_df[, -1])
+
+qtiledf <- function(vec, probs=c(0, .1, .25, .5, .75, .9, 1)) {
+  cbind(n=length(vec), n.notNA=sum(!is.na(vec)), as.data.frame(t(stats::quantile(vec, na.rm = TRUE, probs))))
+}
+
+# note how different the results are for simann vs the other methods
+# this is interesting and is worth examining how it affects file quality
+wts_long %>%
+  group_by(method) %>%
+  do(qtiledf(.$weight))
+
+mdn <- median(wts0)
+wts_long %>%
+  ggplot(aes(x=weight)) +
+  geom_histogram(fill="blue") +
+  geom_vline(aes(xintercept = mdn)) +
+  facet_wrap(~method, ncol=1)
+
+# compare constraint values
+calc_constraints(wts0, sampdata, names(consdata))
+f <- function(weights){
+  calc_constraints(weights, sampdata, names(consdata)) %>%
+    t %>%
+    as_tibble()
+}
+wts_long %>%
+  group_by(method) %>%
+  do(f(.$weight)) %>%
+  bind_rows(consdata %>% mutate(method="target")) %>%
+  arrange(method)
+
+# compare objective function
+wts_long %>%
+  group_by(method) %>%
+  summarise(obj=objfn(weight, sampdata, consdata)) %>%
+  arrange(method)
+
+```
+
