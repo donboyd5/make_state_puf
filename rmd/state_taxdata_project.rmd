@@ -13,6 +13,9 @@ editor_options:
 ---
 
 # Project Statement of Work
+See [this](https://docs.google.com/document/d/1K-3V3Acfeoyc5VvcPNnfsFkUq37fgMQEOSmR3_yGENA/edit?usp=sharing).
+
+The primary goals of this project are to (1) adapt and extend methods and tools developed in previous incubator projects, allowing us to develop state-specific income tax microdata files from the existing IRS SOI national Public Use File (PUF), and (2) develop at least one preliminary file for one state.
 
 
 # Yimeng's Project Statement of Work
@@ -29,7 +32,7 @@ knitr::opts_chunk$set(echo=FALSE, warning=FALSE, message=FALSE)
 ```
 
 
-```{r system_specific_info, include=TRUE}
+```{r system_specific_info, include=FALSE}
 # change these as needed
 # pufdir <- "C:/Users/donbo/Dropbox/OSPC - Shared/IRS_pubuse_2011/"
 
@@ -48,17 +51,20 @@ source(here::here("r/includes", "functions_state_puf.r"))
 
 # Outline of work
 
-1. Create 
+1. ONETIME:
+    + Get and save 2011 targets for all states
+    + Get and save an rds version of the PUF, with aggregate records excluded
+    + Get and save ratio-adjusted weights for all states
 
 
 
 # Steps
 
-## Create file
+## Get and save targets for all states
 
 ```{r ONETIME}
 # create a clean file of 2011 SOI Historical Table 2 targets, all states, saved in data/hist2_2011.csv
-source(here::here("r", "0a_get_and_save_SOI_state_summary_files.r"))
+source(here::here("r", "0a_get_and_save_SOI_state_summary_files.r")) # creates hist2_2011.csv with soi targets all states
 source(here::here("r", "0b_prepare_ratio_adjusted_state_weights.r"))
 
 

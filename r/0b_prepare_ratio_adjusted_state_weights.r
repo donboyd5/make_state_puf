@@ -18,11 +18,11 @@
 #****************************************************************************************************
 #                Libraries and globals ####
 #****************************************************************************************************
-source("./r/includes/libraries.r")
-source("./r/includes/globals.r")
-
-source("./r/includes/functions_general.r")
-source("./r/includes/functions_state_puf.r")
+# source("./r/includes/libraries.r")
+# source("./r/includes/globals.r")
+# 
+# source("./r/includes/functions_general.r")
+# source("./r/includes/functions_state_puf.r")
 
 
 #****************************************************************************************************
@@ -35,16 +35,16 @@ source("./r/includes/functions_state_puf.r")
 #****************************************************************************************************
 #.. puf data and variable names ----
 # puf <- readRDS(paste0(globals$tc.dir, "puf_lc.rds")) # note that this has all records, and has wt variable
-puf <- get_puf_xagg() # ORIGINAL PUF less the 4 aggregate records
+puf <- get_puf_xagg() # ORIGINAL PUF less the 4 aggregate records, with a wt variable
 glimpse(puf)
 
 pufwts <- puf %>%
-  mutate(agi_group=get_agi_group(E00100, 2011),
-         wt=S006) %>%
+  mutate(agi_group=get_agi_group(E00100, 2011)) %>%
   group_by(agi_group) %>%
   summarise(n=n(), nret=sum(wt), nret_joint=sum(wt * (MARS==2))) %>%
   mutate(nret_other=nret - nret_joint, incgrp=paste0("inc", as.numeric(agi_group)))
 pufwts
+
 
 get_rweights <- function(stabbr){
   # get target weights for the state
