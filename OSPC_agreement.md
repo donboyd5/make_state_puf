@@ -1,0 +1,73 @@
+
+# Incubating Development of State-Specific Income Tax Microdata Files
+
+<!-- badges: start -->
+
+<!-- badges: end -->
+
+Draft: 4/4/2019
+
+The primary goals of this project are to (1) adapt and extend methods
+and tools developed in previous incubator projects, allowing us to
+develop state-specific income tax microdata files from the existing IRS
+SOI national Public Use File (PUF), and (2) develop at least one
+preliminary file for one state.
+
+Most of the methods and tools that we will adapt and extend were
+developed or improved in taxdata and in the synthetic PUF incubator
+project. They include techniques such as synthesizing microdata files
+either partially or fully, re-weighting files and weighting files from
+scratch to hit or come close to aggregate targets, and methods for
+measuring file quality. Now that these techniques are developed, it is a
+good time to put them to use, extending and enhancing them as needed, to
+construct a concrete product that will be valuable to users.
+
+The data files will be intended for two main purposes: (1) analyzing the
+revenue and distributional consequences of possible reforms to a state’s
+income tax, and (2) analyzing the revenue and distributional
+consequences for a state’s taxpayers of possible reforms to the federal
+income tax. The goal is to develop data that are of high enough quality
+that they can be used in federal and state income tax simulation models
+and be useful in public policy debates.
+
+The project will focus, at least initially, on existing state taxpayer
+populations and on the existing population of federal taxpayers in a
+state. An eventual goal would be to adapt and extend supplemental
+methods to expand the data to include nonfilers not in the PUF and to
+include data elements not in the existing PUF, but that is not an
+expected outcome during the incubation period.
+
+The project will focus on two important technical tasks:
+
+1.  Constructing a data file for a recent historical year that
+    represents characteristics of the state income-tax paying population
+    well as measured by publicly available data from the IRS on
+    characteristics of federal taxpayers in the state, extended where
+    practical and appropriate to additional data sources on taxpayers in
+    a state such as state revenue department summary data on state
+    taxpayers.
+
+2.  Forecasting the historical data to future years in a manner that
+    takes into account:
+
+<!-- end list -->
+
+  - Potentially useful information from other subsequently published
+    data sources on how state households and their distribution may have
+    changed since the base-year PUF (e.g., data from the American
+    Community Survey, from the Current Population Survey, and from state
+    revenue departments). The task here is to use these data sources to
+    help define targets for extrapolation and forecasting (not to merge
+    or impute values from these sources onto the tax data).
+
+  - High quality demographic and economic forecasts that may be
+    available for the state and nation.
+
+The methods involved will be useful regardless of whether the underlying
+source data is from the IRS national PUF file, or from a synthetic
+version of the IRS national PUF file.
+
+To the extent appropriate and practical, this project will be conducted
+in a way that seeks synergy with (a) other projects such as taxdata and
+Tax-Calculator, and (b) related efforts to develop a state income tax
+model in one or more states.
