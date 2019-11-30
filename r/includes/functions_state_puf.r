@@ -60,52 +60,7 @@ get_income_ranges <- function(year) {
 #                Manipulate SOI Historical Table 2 information ####
 #****************************************************************************************************
 
-get_SOI_puf_xwalk <- function(year){
-  # get a crosswalk between SOI Historical Table 2 line numbers and PUF-like variable names.
-  # The spreadsheet we read from, created by djb, has lower case "e" variable names, so I modify them below to upper case
-  if(year==2011){
-    xwalk <- read_excel(paste0("./data/", globals$xlfile), 
-                        sheet = "2011_hist2_puf",
-                        range="A4:D107")
-    # xwalk$h2vname %>% sort
-    str_sub(xwalk$h2vname, 1, 1)[str_sub(xwalk$h2vname, 1, 1)=="e"] <- "E"
-    # xwalk$h2vname %>% sort
-  } else xwalk <- NULL
-  return(xwalk)
-}
 
-
-get_hist2_values <- function(year){
-  # read from the previously created file that has all states
-  hist2 <- read_csv("./data/hist2_2011.csv")
-  return(hist2)
-}
-
-
-get_saltfix <- function(xwalk, hist2_values){
-  # fix SALT -- construct:
-  # -- E18400 = (income + sales)
-  # -- other -- E18600 = (total - income - sales - real estate)
-  # fix salt
-  # saltvars <- c("e18400_pit_n", "e18400_pit", "e18400_sales_n", "e18400_sales", "e18500_n", "e18500", "e18taxes_n", "e18taxes")
-  saltvars <- c("E18400_pit_n", "E18400_pit", "E18400_sales_n", "E18400_sales", "E18500_n", "E18500", "E18taxes_n", "E18taxes")
-  saltfix <- xwalk %>%
-    filter(h2vname %in% saltvars) %>%
-    select(lineno, h2vname) %>%
-    left_join(hist2_values %>% select(-table_desc), by="lineno") %>%
-    select(-lineno) %>%
-    pivot_wider(names_from = h2vname, values_from = value) %>%
-    mutate(E18400=E18400_pit + E18400_sales,
-           E18400_n=E18400_pit_n + E18400_sales_n,
-           E18600=E18taxes - E18400 - E18500) %>% # we cannot compute e1600_n - not enough information
-    select(stabbr, incgrp, E18400, E18400_n, E18600) %>%
-    pivot_longer(-c(stabbr, incgrp), names_to = "h2vname") %>%
-    mutate(table_desc=case_when(h2vname=="E18400" ~ "State and local income or sales taxes",
-                                h2vname=="E18400_n" ~ "State and local income or sales taxes: number",
-                                h2vname=="E18600" ~ "State and local other taxes (motor vehicle, other)"),
-           lineno=1000 + row_number() - 1)
-  return(saltfix)
-}
 
 
 get_hist2_targets_allstates <- function(year){
@@ -148,44 +103,36 @@ get_hist2_targets_allstates <- function(year){
 }
 
 # djb NovDec 2019 above here ----
-
-
-
-get_hist2_values_state <- function(year, stabbr="NY"){
-  # read SOI Historical Table 2 for a single state from its own SOI excel file
-  # currently just gets NY for 2011
-  vnames <- c("table_desc", paste0("inc", 0:9))
-  df <- read_excel(paste0(globals$hist2, "11in33ny.xls"), col_names = vnames)
-  # glimpse(df)
-  
-  firstrow <- which(df$table_desc=="NEW YORK") + 1
-  lastrow <- which(str_detect(df$table_desc, coll("** - Not shown to avoid disclosure"))) - 1
-  # firstrow; lastrow
-  
-  hist2 <- df %>%
-    filter(row_number() >= firstrow, row_number() <= lastrow) %>%
-    mutate(lineno=row_number()) %>%
-    gather(incgrp, value, -lineno, -table_desc) %>%
-    mutate(value=as.numeric(value),
-           stabbr=stabbr) %>%
-    select(lineno, table_desc, stabbr, incgrp, value)
-  # ht(hist2)
-  return(hist2)
-}
-
-
-get_hist2_values <- function(year, stabbr.in="NY"){
-  # read from the previously created file that has all states
-  hist2 <- read_csv("./data/hist2_2011.csv") %>%
-    filter(stabbr==stabbr.in)
-  return(hist2)
-}
-
-
+# hist2_targets <- xwalk %>%
+#   filter(!h2vname %in% vdrop, !is.na(h2vname)) %>%
+#   select(lineno, h2vname, table_desc) %>%
+#   left_join(hist2_values %>% select(-table_desc) %>% rename(target=value), by="lineno") %>%
+#   bind_rows(saltfix %>% rename(target=value)) %>% # do this here so that we get income info in next step
+#   left_join(inclink %>% select(incgrp, imin_ge, imax_lt), by="incgrp") %>%
+#   mutate(vname=ifelse(h2vname=="nret_joint", "e00100", str_remove(h2vname, "_n"))) %>%
+#   mutate(target=ifelse(str_detect(h2vname, "_n") |
+#                          str_detect(h2vname, "nret") |
+#                          str_detect(h2vname, "XTOT"),
+#                        target, target * 1000)) %>%
+#   mutate(imin_ge=ifelse(is.na(imin_ge), -Inf, imin_ge),
+#          imax_lt=ifelse(is.na(imax_lt), Inf, imax_lt),
+#          puf_multiplier=ifelse(str_detect(h2vname, "_n") | str_detect(h2vname, "nret"), 1, vname)) %>%
+#   mutate(inc_rule=paste0("e00100 >= ", imin_ge, " & ", "e00100 < ", imax_lt) %>% parens,
+#          # VERIFY that we should use != rather than > for the _n rule
+#          other_rule=case_when(h2vname=="nret_joint" ~ "(MARS==2)",
+#                               str_detect(h2vname, "_n") & vname!="e00100" ~ paste0(vname, " != 0") %>% parens,
+#                               TRUE ~ ""),
+#          select_rule=paste0(inc_rule,
+#                             ifelse(other_rule!="", 
+#                                    paste0(" & ", other_rule),
+#                                    "")) %>% parens) %>%
+#   mutate(calc_rule=paste0("wt * ", puf_multiplier, " * ", select_rule) %>% parens) %>%
+#   select(-contains("rule"), everything(), contains("rule"))
 
 
 
 get_hist2_targets <- function(year, stabbr){
+  readRDS(here::here("data", "hist2_targets2011.rds"))
   xwalk <- get_SOI_puf_xwalk(year)
   inclink <- get_income_ranges(year)
   
@@ -197,31 +144,7 @@ get_hist2_targets <- function(year, stabbr){
   vdrop <- c("nret_prep", "totinc")
   
   # note that we rename hist2 value to target
-  hist2_targets <- xwalk %>%
-    filter(!h2vname %in% vdrop, !is.na(h2vname)) %>%
-    select(lineno, h2vname, table_desc) %>%
-    left_join(hist2_values %>% select(-table_desc) %>% rename(target=value), by="lineno") %>%
-    bind_rows(saltfix %>% rename(target=value)) %>% # do this here so that we get income info in next step
-    left_join(inclink %>% select(incgrp, imin_ge, imax_lt), by="incgrp") %>%
-    mutate(vname=ifelse(h2vname=="nret_joint", "e00100", str_remove(h2vname, "_n"))) %>%
-    mutate(target=ifelse(str_detect(h2vname, "_n") |
-                           str_detect(h2vname, "nret") |
-                           str_detect(h2vname, "XTOT"),
-                         target, target * 1000)) %>%
-    mutate(imin_ge=ifelse(is.na(imin_ge), -Inf, imin_ge),
-           imax_lt=ifelse(is.na(imax_lt), Inf, imax_lt),
-           puf_multiplier=ifelse(str_detect(h2vname, "_n") | str_detect(h2vname, "nret"), 1, vname)) %>%
-    mutate(inc_rule=paste0("e00100 >= ", imin_ge, " & ", "e00100 < ", imax_lt) %>% parens,
-           # VERIFY that we should use != rather than > for the _n rule
-           other_rule=case_when(h2vname=="nret_joint" ~ "(MARS==2)",
-                                str_detect(h2vname, "_n") & vname!="e00100" ~ paste0(vname, " != 0") %>% parens,
-                                TRUE ~ ""),
-           select_rule=paste0(inc_rule,
-                              ifelse(other_rule!="", 
-                                     paste0(" & ", other_rule),
-                                     "")) %>% parens) %>%
-    mutate(calc_rule=paste0("wt * ", puf_multiplier, " * ", select_rule) %>% parens) %>%
-    select(-contains("rule"), everything(), contains("rule"))
+
   return(hist2_targets)
 }
 
@@ -268,12 +191,6 @@ get_tolerances <- function(){
     mutate(apdiff.ub=lead(apdiff.lb)) %>% 
     select(starts_with("ap"), tol.default)
   return(tolerances)
-}
-
-
-get_national_puf <- function() {
-  # note that this has all records, and has wt variable
-  readRDS(paste0(globals$tc.dir, "puf_lc.rds"))
 }
 
 

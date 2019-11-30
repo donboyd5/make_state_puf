@@ -22,7 +22,7 @@ globals$tc.cli <- "C:/ProgramData/Anaconda3/Scripts/tc" # location of Tax-Calcul
 # globals$taxplans.dir <- "D:/Dropbox/RPrograms PC/OSPC/syndata4/tax_plans/"
 
 # filenames ----
-globals$xlfile <- "Boyd_State_PUF_info(3).xlsx"
+globals$xlfile <- "Boyd_State_PUF_info(4).xlsx"
 
 
 #****************************************************************************************************
@@ -54,4 +54,19 @@ globals$agibrks_hist2_2011 <- c(-Inf, 1, 25e3, 50e3, 75e3, 100e3, 200e3, 500e3, 
 # 9 = ‘$500,000 under $1,000,000’
 # 10 = ‘$1,000,000 or more’
 globals$agibrks_hist2_2016 <- c(-Inf, 1, 10e3, 25e3, 50e3, 75e3, 100e3, 200e3, 500e3, 1e6, Inf)
+
+# no change to agi breaks in 2017
+# 2017 Historical Table 2 definition
+# Size of adjusted gross income	0 = No AGI Stub
+# 1 = ‘Under $1’
+# 2 = '$1 under $10,000'
+# 3 = '$10,000 under $25,000'
+# 4 = '$25,000 under $50,000'
+# 5 = '$50,000 under $75,000'
+# 6 = '$75,000 under $100,000'
+# 7 = '$100,000 under $200,000'
+# 8 = ‘$200,000 under $500,000’
+# 9 = ‘$500,000 under $1,000,000’
+# 10 = ‘$1,000,000 or more’
+globals$agibrks_hist2_2017 <- globals$agibrks_hist2_2016
 

@@ -25,20 +25,17 @@
 # source("./r/includes/functions_state_puf.r")
 
 
-#****************************************************************************************************
-#                get and save data ####
-#****************************************************************************************************
 
+soi_targets <- readRDS(here::here("data", "hist2_targets2011.rds"))
 
 #****************************************************************************************************
 #                ONETIME: Prepare a file with RECID and ratio-adjusted weights for EACH state ####
 #****************************************************************************************************
 #.. puf data and variable names ----
 # puf <- readRDS(paste0(globals$tc.dir, "puf_lc.rds")) # note that this has all records, and has wt variable
-puf <- get_puf_xagg() # ORIGINAL PUF less the 4 aggregate records, with a wt variable
-glimpse(puf)
 
-pufwts <- puf %>%
+
+pufwts <- get_puf_xagg() %>%
   mutate(agi_group=get_agi_group(E00100, 2011)) %>%
   group_by(agi_group) %>%
   summarise(n=n(), nret=sum(wt), nret_joint=sum(wt * (MARS==2))) %>%
