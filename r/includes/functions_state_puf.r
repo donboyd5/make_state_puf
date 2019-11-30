@@ -31,16 +31,18 @@ get_incgrp <- function(agi_group) {paste0("inc", as.numeric(agi_group))}
 
 get_income_ranges <- function(year) {
   # return a data frame that defines income ranges that SOI uses in Historical Table 2
-  # for a year we care about - currently 2011 or 2016
+  # for a year we care about
   if(year==2011) agibrks <- globals$agibrks_hist2_2011 else
-    if(year==2016) agibrks <- globals$agibrks_hist2_2016 
+    if(year==2016) agibrks <- globals$agibrks_hist2_2016 else
+      if(year==2017) agibrks <- globals$agibrks_hist2_2017 
     
     ifactor <- cut(agibrks, agibrks, right=FALSE)
     # ifactor
     # levels(ifactor)
     scale_commak <- function(value) ifelse(value < 1000, scales::comma(value), paste0(scales::comma(value / 1000), "k"))
     
-    inclink <- tibble(inum=1:(length(agibrks) - 1),
+    inclink <- tibble(year=year, 
+                      inum=1:(length(agibrks) - 1),
                       imin_ge=agibrks[inum],
                       imax_lt=agibrks[inum + 1], 
                       incgrp=paste0("inc", inum), 
@@ -59,8 +61,6 @@ get_income_ranges <- function(year) {
 #****************************************************************************************************
 #                Manipulate SOI Historical Table 2 information ####
 #****************************************************************************************************
-
-
 
 
 get_hist2_targets_allstates <- function(year){
@@ -129,24 +129,6 @@ get_hist2_targets_allstates <- function(year){
 #   mutate(calc_rule=paste0("wt * ", puf_multiplier, " * ", select_rule) %>% parens) %>%
 #   select(-contains("rule"), everything(), contains("rule"))
 
-
-
-get_hist2_targets <- function(year, stabbr){
-  readRDS(here::here("data", "hist2_targets2011.rds"))
-  xwalk <- get_SOI_puf_xwalk(year)
-  inclink <- get_income_ranges(year)
-  
-  # hist2_values <- get_hist2_values_state(year, stabbr)
-  hist2_values <- get_hist2_values(year, stabbr)
-  
-  saltfix <- get_saltfix(xwalk, hist2_values)
-  
-  vdrop <- c("nret_prep", "totinc")
-  
-  # note that we rename hist2 value to target
-
-  return(hist2_targets)
-}
 
 
 check_targets <- function(targets, df){

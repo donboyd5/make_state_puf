@@ -64,15 +64,20 @@ source(here::here("r/includes", "functions_state_puf.r"))
 
 ```{r ONETIME}
 # create a clean file of 2011 SOI Historical Table 2 targets, all states, saved in data/hist2_2011.csv
-source(here::here("r", "0a_get_and_save_soi2011_targets.r"))
-create_and_save_soi2011_targets(globals) # creates ./data/hist2_2011.rds with soi targets all states
+source(here::here("r", "0a_prepare_soi2011_targets_csvformat.r"))
+save_soi2011_targets_csvformat(globals) # creates ./data/hist2_2011.rds with soi targets all states
+# readRDS(here::here("data", "hist2_targets2011.rds"))
 
-readRDS(here::here("data", "hist2_targets2011.rds"))
+source(here::here("r", "0b_prepare_soicsv_targets.r"))
+prepare_soicsv_targets_long(globals, 2017) # creates ./data/hist2_2011.rds with soi targets all states
+# readRDS(here::here("data", paste0("hist2_targets", 2017, ".rds")))
 
 # puf <- get_puf_xagg() # ORIGINAL PUF less the 4 aggregate records, with a wt variable
 # glimpse(puf)
 
-# ONETIME: Prepare a file with RECID and ratio-adjusted weights for EACH state
+# prepare puf for tax-calculator and get 2017 agi
+
+# Prepare a file for each year with RECID and ratio-adjusted weights for EACH state
 source(here::here("r", "0b_prepare_ratio_adjusted_state_weights.r"))
 
 
