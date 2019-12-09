@@ -4,9 +4,13 @@
 # Save the result in hist2_targets2011.rds in the data directory.
 
 
-#****************************************************************************************************
-#                functions to get and save 2011 data ####
-#****************************************************************************************************
+get_soi2017_xwalk <- function(globals){
+  xwalk <- read_excel(paste0("./data/", globals$xlfile), 
+                      sheet = "2017soicsv_2011puf_xwalk",
+                      range="A3:E157")
+  return(xwalk)
+}
+
 
 prepare_soicsv_targets_long <- function(globals, year){
   # get the 53-"state" hist2 data (states, DC, US, other areas)
@@ -15,19 +19,22 @@ prepare_soicsv_targets_long <- function(globals, year){
                     col_types = cols(.default= col_character(),
                                      AGI_STUB=col_integer()), 
                     n_max=-1)
-  
   # check
   # rows <- c(1:5, (nrow(hist2)-4):nrow(hist2))
   # cols <- c(1:5, (ncol(hist2) - 4):ncol(hist2))
   # hist2[rows, cols]
+  
+  xwalk <- get_soi2017_xwalk(globals) %>%
+    select(h2vname, table_desc)
+  
   hist2_long <- hist2 %>%
-    mutate(year=year,
-           AGI_STUB=paste0("inc", AGI_STUB)) %>%
-    rename(stabbr=STATE, incgrp=AGI_STUB) %>%
-    pivot_longer(cols=-c(year, stabbr, incgrp), names_to="h2vname", values_to = "target") %>%
+    mutate(year=year) %>%
+    rename(stabbr=STATE) %>%
+    pivot_longer(cols=-c(year, stabbr, AGI_STUB), names_to="h2vname", values_to = "target") %>%
     mutate(target=parse_number(target)) %>%
-    select(year, stabbr, h2vname, incgrp, target) %>%
-    arrange(year, h2vname, stabbr, incgrp)
+    left_join(xwalk, by="h2vname") %>%
+    select(year, stabbr, h2vname, AGI_STUB, table_desc, target) %>%
+    arrange(h2vname, stabbr, AGI_STUB)
   
   saveRDS(hist2_long, here::here("data", paste0("hist2_targets", year, ".rds")))
   return(NULL)

@@ -24,18 +24,18 @@ get_soi2011_colnames <- function(globals){
   # check
   # cbind(stnames, stabbrs) # good, stabbrs is what we want
 
-  # now create vnames - each state has incgrp 0-9 where inc0 is all returns
-  inc <- paste0("inc", 0:9)
-  
+  # now create vnames - each state has AGI_STUB 0-9 where 0 is all returns
+
   # CAUTION - put stabbr in original order of our vectors
-  colnamesdf <- expand_grid(stabbr=stabbrs, incgrp=inc) %>%
+  colnamesdf <- expand_grid(stabbr=stabbrs, AGI_STUB=0:9) %>%
     mutate(stabbr=factor(stabbr, levels=stabbrs), # will keep the desired order
-           stinc=paste0(stabbr, "_", incgrp)) %>%
-    arrange(stabbr, incgrp)
+           stinc=paste0(stabbr, "_", AGI_STUB)) %>%
+    arrange(stabbr, AGI_STUB)
   
   soi2011_colnames <- c("table_desc", colnamesdf$stinc)
   return(soi2011_colnames)
 }
+
 
 get_soi2011_targets_long <- function(globals){
   # get the 53-"state" hist2 data (states, DC, US, other areas)
@@ -52,7 +52,8 @@ get_soi2011_targets_long <- function(globals){
   # soi_data[rows, cols]
   soi_long <- soi_data %>%
     pivot_longer(cols=-c(lineno, table_desc), names_to="vname", values_to = "target") %>%
-    separate(vname, c("stabbr", "incgrp"))
+    separate(vname, c("stabbr", "AGI_STUB")) %>%
+    mutate(AGI_STUB=as.integer(AGI_STUB))
   return(soi_long)
 }
 
@@ -82,8 +83,8 @@ save_soi2011_targets_csvformat <- function(globals){
   
   soi_targets <- soi_with_names %>%
     mutate(year=2011) %>%
-    select(year, stabbr, lineno, h2vname, incgrp, table_desc, target) %>%
-    arrange(lineno, h2vname, stabbr, incgrp)
+    select(year, stabbr, lineno, h2vname, AGI_STUB, table_desc, target) %>%
+    arrange(lineno, h2vname, stabbr, AGI_STUB)
   
   saveRDS(soi_targets, here::here("data", "hist2_targets2011.rds"))
   return(NULL)

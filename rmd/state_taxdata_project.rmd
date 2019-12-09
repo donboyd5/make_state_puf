@@ -13,7 +13,7 @@ editor_options:
 ---
 
 # Project Statement of Work
-See [this](https://docs.google.com/document/d/1K-3V3Acfeoyc5VvcPNnfsFkUq37fgMQEOSmR3_yGENA/edit?usp=sharing).
+See [this](https://docs.google.com/document/d/1K-3V3Acfeoyc5VvcPNnfsFkUq37fgMQEOSmR3_yGENA/edit?usp=sharing). Also see the separate rmd and md file on the OSPC agreement.
 
 The primary goals of this project are to (1) adapt and extend methods and tools developed in previous incubator projects, allowing us to develop state-specific income tax microdata files from the existing IRS SOI national Public Use File (PUF), and (2) develop at least one preliminary file for one state.
 
@@ -45,6 +45,8 @@ source(here::here("r/includes", "globals.r"))
 globals
 source(here::here("r/includes", "functions_state_puf.r"))
 
+ns <- function(df) {names(df) %>% sort}
+
 ```
 
 
@@ -60,9 +62,50 @@ source(here::here("r/includes", "functions_state_puf.r"))
 
 # Steps
 
+## Get names of essential PUF variables, based on synthetic files and what we learned after
+```{r ONETIME_vnames, eval=FALSE}
+globals
+df <- read_csv("C:/Users/donbo/Google Drive/synpuf/syntheses/synpuf20_no_disclosures.csv", n_max=0)
+ns(df)
+# variables needed to run the file through tax calculator -- see note below
+# E03260  Deduction for self-employment tax
+# XOCAH   Exemptions for Children Living at Home
+# XOCAWH  Exemptions for Children Living Away from Home
+# XOODEP  Exemptions for Other Dependents 
+# XOPAR   Exemptions for Parents Living at Home or Away from Home
+
+# we will get other variables after we run the "grown" file through Tax-Calculator
+#   c00100 --> E00100
+#   ?? --> E02500
+#   ?? --> E04800
+needed_puf_vars <- c(names(df), "E03260", "XOCAH", "XOCAWH", "XOODEP", "XOPAR")
+saveRDS(needed_puf_vars, here::here("data", "needed_puf_vars.csv"))
+
+# readRDS(here::here("data", "needed_puf_vars.csv"))
+
+# On Mon, Nov 4, 2019 at 10:03 AM Yin, Yimeng <yyin@albany.edu> wrote:
+# Hi Don, 
+# 
+# I found I still can't run the synthetic puf through taxdata after filling the missing variables. 
+# 
+# There are 8 missing variables in the synthetic puf:
+# 
+# puf['xocah']  "Exemptions for Children Living at Home"
+# puf['xocawh'] "Exemptions for Children Living Away from Home"
+# puf['xoodep']  "Exemptions for Other Dependents"
+# puf['xopar']    "Exemptions for Parents Living at Home or Away from Home"
+# puf['e03260'] "Deduction for self-employment tax"
+# puf['e00100']  "Adjusted Gross Income (deficit)  (AGI)  (+/-)"
+# puf['e02500'] "Social Security benefits in AGI"
+# puf['e04800'] "Taxable income"
+
+```
+
+
+
 ## Get and save targets for all states
 
-```{r ONETIME}
+```{r ONETIME_targets, eval=FALSE}
 # create a clean file of 2011 SOI Historical Table 2 targets, all states, saved in data/hist2_2011.csv
 source(here::here("r", "0a_prepare_soi2011_targets_csvformat.r"))
 save_soi2011_targets_csvformat(globals) # creates ./data/hist2_2011.rds with soi targets all states
@@ -74,6 +117,8 @@ prepare_soicsv_targets_long(globals, 2017) # creates ./data/hist2_2011.rds with 
 
 # puf <- get_puf_xagg() # ORIGINAL PUF less the 4 aggregate records, with a wt variable
 # glimpse(puf)
+
+# prepare 
 
 # prepare puf for tax-calculator and get 2017 agi
 

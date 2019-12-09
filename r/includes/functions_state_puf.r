@@ -14,47 +14,72 @@ get_puf_xagg <- function(){
   return(puf)
 }
 
-
-#****************************************************************************************************
-#                Income ranges ####
-#****************************************************************************************************
-get_agi_group <- function(agi, year){
-  if(year==2011) agibrks <- globals$agibrks_hist2_2011 else
-    if(year==2016) agibrks <- globals$agibrks_hist2_2016 
-    
-    agi_group=cut(agi, agibrks, right=FALSE)
-    return(agi_group)
+get_puf_vnames <- function(){
+  # get data frame with PUF variables names and labels (vdesc)
+  # readRDS("./data/puf.vnames.rds")
+  read_csv(paste0(globals$tcdir, "pufvars.csv"))
 }
 
-get_incgrp <- function(agi_group) {paste0("inc", as.numeric(agi_group))}
 
-
-get_income_ranges <- function(year) {
-  # return a data frame that defines income ranges that SOI uses in Historical Table 2
-  # for a year we care about
-  if(year==2011) agibrks <- globals$agibrks_hist2_2011 else
-    if(year==2016) agibrks <- globals$agibrks_hist2_2016 else
-      if(year==2017) agibrks <- globals$agibrks_hist2_2017 
-    
-    ifactor <- cut(agibrks, agibrks, right=FALSE)
-    # ifactor
-    # levels(ifactor)
-    scale_commak <- function(value) ifelse(value < 1000, scales::comma(value), paste0(scales::comma(value / 1000), "k"))
-    
-    inclink <- tibble(year=year, 
-                      inum=1:(length(agibrks) - 1),
-                      imin_ge=agibrks[inum],
-                      imax_lt=agibrks[inum + 1], 
-                      incgrp=paste0("inc", inum), 
-                      agi_group=levels(ifactor)[-length(ifactor)]) %>%
-      mutate(agi_label=case_when(
-        is.infinite(imin_ge) ~ paste0("< ", scale_commak(imax_lt)),
-        (imin_ge >= 0) & (imax_lt < Inf) ~ paste0(">= ", scale_commak(imin_ge), " to ", scale_commak(imax_lt)),
-        is.infinite(imax_lt) ~ paste0(">= ", scale_commak(imin_ge)),
-        TRUE ~ "ERROR"))
-    
-    return(inclink)
+#  prep file for Tax-Calculator functions ####
+change_case <- function(oldnames, upper_case_vars=c("MARS", "XTOT", "DSI", "EIC", "FDED", "MIDR", "RECID")){
+  # convert variable names to lower case, except for those that should
+  # remain upper case
+  newnames <- oldnames
+  lower_case_indexes <- !newnames %in% upper_case_vars
+  lower_case_names <- newnames[lower_case_indexes] %>% str_to_lower
+  newnames[lower_case_indexes] <-lower_case_names
+  return(newnames)
 }
+
+
+impose_variable_rules <- function(df){
+  # Per https://pslmodels.github.io/Tax-Calculator/, Tax-Calculator requires:
+  #    ordinary dividends (e00600) >= qualified dividends (e00650)
+  #    total pension and annuity income (e01500) >= taxable pension and annuity income (e01700)
+  
+  # A few of the early synthesized files did not enforce this so we enforce it here by
+  # forcing the e00600 and e01500 to be at least as large as their counterparts
+  # This does NO ERROR CHECKING or reporting to let the user know of a potential problem.
+  # Once we no longer use those early files we should stop running this function.
+  # This should not be needed for synpuf5 and later.
+  
+  if("e00650" %in% names(df) & "e00600" %in% names(df)){
+    df <- df %>%
+      mutate(e00600=pmax(e00650, e00600))
+  }
+  if("e01500" %in% names(df) & "e01700" %in% names(df)){
+    df <- df %>%
+      mutate(e01500=pmax(e01500, e01700))
+  }
+  return(df)
+}
+
+
+prime_spouse_splits <- function(df){
+  # Per https://pslmodels.github.io/Tax-Calculator/, Tax-Calculator requires the filing-unit total 
+  # for each of several earnings-related variables to be split between the taxpayer and the spouse:
+  #   e00200 = e00200p + e00200s  # wages
+  #   e00900 = e00900p + e00900s  # business income or loss
+  #   e02100 = e02100p + e02100s  # Schedule F net profit/loss
+  
+  # For now, create arbitrary prime-spouse splits of these variables so that we can
+  # run Tax-Calculator
+  prime.pct <- ifelse(df$MARS==2, .5, 1)
+  spouse.pct <- ifelse(df$MARS==2, .5, 0)
+  df <- df %>%
+    mutate(e00200p=e00200 * prime.pct,
+           e00900p=e00900 * prime.pct,
+           e02100p=e02100 * prime.pct,
+           
+           e00200s=e00200 * spouse.pct,
+           e00900s=e00900 * spouse.pct,
+           e02100s=e02100 * spouse.pct)
+  return(df)
+}
+
+
+
 
 
 

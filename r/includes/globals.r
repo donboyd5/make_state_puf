@@ -11,7 +11,7 @@ globals$dbox <- "C:/Users/donbo/Dropbox/"
 globals$pufdir <- paste0(globals$dbox, "OSPC - Shared/IRS_pubuse_2011/") # location of puf2011.csv
 
 # private directory for Tax-Calculator record-level output that we don't want moved from this machine
-globals$tc.dir <- "D:/tcdir/"
+globals$tcdir <- "D:/tcdir/"
 
 globals$statedir <- paste0(globals$tc.dir, "state_puf/")
 
@@ -28,6 +28,9 @@ globals$xlfile <- "Boyd_State_PUF_info(4).xlsx"
 #****************************************************************************************************
 #                Non-System-Specific Globals ####
 #****************************************************************************************************
+globals$agibrks <- list(`2011` = c(-Inf, 1, 25e3, 50e3, 75e3, 100e3, 200e3, 500e3, 1e6, Inf),
+                        `2016` = c(-Inf, 1, 10e3, 25e3, 50e3, 75e3, 100e3, 200e3, 500e3, 1e6, Inf),
+                        `2017` = c(-Inf, 1, 10e3, 25e3, 50e3, 75e3, 100e3, 200e3, 500e3, 1e6, Inf))
 # 2011 Historical Table 2 definition
 # 0 = No AGI Stub
 # 1 = ‘Under $1’
@@ -39,7 +42,7 @@ globals$xlfile <- "Boyd_State_PUF_info(4).xlsx"
 # 7 = ‘$200,000 under $500,000’
 # 8 = ‘$500,000 under $1,000,000’
 # 9 = ‘$1,000,000 or more’
-globals$agibrks_hist2_2011 <- c(-Inf, 1, 25e3, 50e3, 75e3, 100e3, 200e3, 500e3, 1e6, Inf)
+# globals$agibrks_hist2_2011 <- c(-Inf, 1, 25e3, 50e3, 75e3, 100e3, 200e3, 500e3, 1e6, Inf)
 
 # 2016 Historical Table 2 definition
 # 0 = No AGI Stub
@@ -53,7 +56,7 @@ globals$agibrks_hist2_2011 <- c(-Inf, 1, 25e3, 50e3, 75e3, 100e3, 200e3, 500e3, 
 # 8 = ‘$200,000 under $500,000’
 # 9 = ‘$500,000 under $1,000,000’
 # 10 = ‘$1,000,000 or more’
-globals$agibrks_hist2_2016 <- c(-Inf, 1, 10e3, 25e3, 50e3, 75e3, 100e3, 200e3, 500e3, 1e6, Inf)
+# globals$agibrks_hist2_2016 <- c(-Inf, 1, 10e3, 25e3, 50e3, 75e3, 100e3, 200e3, 500e3, 1e6, Inf)
 
 # no change to agi breaks in 2017
 # 2017 Historical Table 2 definition
@@ -68,5 +71,7 @@ globals$agibrks_hist2_2016 <- c(-Inf, 1, 10e3, 25e3, 50e3, 75e3, 100e3, 200e3, 5
 # 8 = ‘$200,000 under $500,000’
 # 9 = ‘$500,000 under $1,000,000’
 # 10 = ‘$1,000,000 or more’
-globals$agibrks_hist2_2017 <- globals$agibrks_hist2_2016
+# globals$agibrks_hist2_2017 <- globals$agibrks_hist2_2016
+
+# globals$agibrks[[as.character(2011)]]
 

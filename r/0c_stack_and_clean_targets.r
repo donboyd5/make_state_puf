@@ -3,40 +3,29 @@
 #****************************************************************************************************
 #                Income ranges ####
 #****************************************************************************************************
-get_agi_group <- function(agi, year){
-  if(year==2011) agibrks <- globals$agibrks_hist2_2011 else
-    if(year==2016) agibrks <- globals$agibrks_hist2_2016 
-    
-    agi_group=cut(agi, agibrks, right=FALSE)
-    return(agi_group)
-}
-
-get_incgrp <- function(agi_group) {paste0("inc", as.numeric(agi_group))}
-
+# get_incgrp <- function(agi_group) {paste0("inc", as.numeric(agi_group))}
 
 get_income_ranges <- function(year) {
   # return a data frame that defines income ranges that SOI uses in Historical Table 2
   # for a year we care about
-  if(year==2011) agibrks <- globals$agibrks_hist2_2011 else
-    if(year==2016) agibrks <- globals$agibrks_hist2_2016 else
-      if(year==2017) agibrks <- globals$agibrks_hist2_2017 
+  agibrks <- globals$agibrks[[as.character(year)]]
       
-      ifactor <- cut(agibrks, agibrks, right=FALSE)
-      # ifactor
-      # levels(ifactor)
-      scale_commak <- function(value) ifelse(value < 1000, scales::comma(value), paste0(scales::comma(value / 1000), "k"))
+  ifactor <- cut(agibrks, agibrks, right=FALSE)
+  # ifactor
+  # levels(ifactor)
+  scale_commak <- function(value) ifelse(value < 1000, scales::comma(value), paste0(scales::comma(value / 1000), "k"))
       
-      inclink <- tibble(year=year, 
-                        inum=1:(length(agibrks) - 1),
-                        imin_ge=agibrks[inum],
-                        imax_lt=agibrks[inum + 1], 
-                        incgrp=paste0("inc", inum), 
-                        agi_group=levels(ifactor)[-length(ifactor)]) %>%
-        mutate(agi_label=case_when(
-          is.infinite(imin_ge) ~ paste0("< ", scale_commak(imax_lt)),
-          (imin_ge >= 0) & (imax_lt < Inf) ~ paste0(">= ", scale_commak(imin_ge), " to ", scale_commak(imax_lt)),
-          is.infinite(imax_lt) ~ paste0(">= ", scale_commak(imin_ge)),
-          TRUE ~ "ERROR"))
+  inclink <- tibble(year=year, 
+                    inum=1:(length(agibrks) - 1),
+                    imin_ge=agibrks[inum],
+                    imax_lt=agibrks[inum + 1], 
+                    incgrp=paste0("inc", inum), 
+                    agi_group=levels(ifactor)[-length(ifactor)]) %>%
+    mutate(agi_label=case_when(
+      is.infinite(imin_ge) ~ paste0("< ", scale_commak(imax_lt)),
+      (imin_ge >= 0) & (imax_lt < Inf) ~ paste0(">= ", scale_commak(imin_ge), " to ", scale_commak(imax_lt)),
+      is.infinite(imax_lt) ~ paste0(">= ", scale_commak(imin_ge)),
+      TRUE ~ "ERROR"))
       
       return(inclink)
 }
@@ -117,13 +106,49 @@ stack_targets <- function(){
   inc_stack <- bind_rows(get_income_ranges(2011),
                          get_income_ranges(2017))
   
+  add_group0 <- function(rec){
+    rec2 <- rec
+    # if(is.na(rec$inum)){
+    #   rec2 <- rec2 %>%
+    #     mutate(inum=0,
+    #            imin_ge= - Inf,
+    #            imax_lt= Inf)
+    # }
+    return(rec2)
+  }
   
-  targets_stack <- bind_rows(
-    readRDS(here::here("data", "hist2_targets2011.rds")) %>%
-      select(year, stabbr, h2vname, incgrp, target),
-    readRDS(here::here("data", "hist2_targets2017.rds")) %>%
-      select(year, stabbr, h2vname, incgrp, target))
-  targets_stack %>% filter(stabbr=="US", incgrp=="inc0", h2vname %in% c("N1", "A00100", "N00200")) %>% arrange(h2vname, year)
+  targets_stack <- bind_rows(readRDS(here::here("data", "hist2_targets2011.rds")) %>%
+                               select(year, stabbr, h2vname, incgrp, target),
+                             readRDS(here::here("data", "hist2_targets2017.rds")) %>%
+                               select(year, stabbr, h2vname, incgrp, target)) %>%
+    left_join(inc_stack) %>%
+    mutate(imin_ge=ifelse(is.na(inum), -Inf, imin_ge),
+           imax_lt=ifelse(is.na(inum), Inf, imax_lt),
+           inum=ifelse(is.na(inum), 0, inum)) %>%
+    mutate(inc_rule=paste0("E00100 >= ", imin_ge, " & ", "E00100 < ", imax_lt) %>% parens,
+           other_rule="",
+           select_rule=paste0(inc_rule,
+                              ifelse(other_rule!="", 
+                                     paste0(" & ", other_rule),
+                                     "")) %>% parens) %>%
+    mutate(puf_multiplier=h2vname, # temporary
+           calc_rule=paste0("wt * ", puf_multiplier, " * ", select_rule) %>% parens)
   
-  return(stack)
+  # targets_stack %>% filter(stabbr=="US", incgrp=="inc0", h2vname %in% c("N1", "A00100", "N00200")) %>% arrange(h2vname, year)
+  
+  return(targets_stack)
 }
+
+
+# mutate(inc_rule=paste0("E00100 >= ", imin_ge, " & ", "E00100 < ", imax_lt) %>% parens,
+#        other_rule=case_when(h2vname=="nret_joint" ~ "(MARS==2)",
+#                             str_detect(h2vname, "_n") & vname!="e00100" ~ paste0(vname, " > 0") %>% parens,
+#                             TRUE ~ ""),
+#        select_rule=paste0(inc_rule,
+#                           ifelse(other_rule!="", 
+#                                  paste0(" & ", other_rule),
+#                                  "")) %>% parens) %>%
+#   mutate(calc_rule=paste0("wt * ", puf_multiplier, " * ", select_rule) %>% parens) %>%
+#   select(-contains("rule"), everything(), contains("rule"))
+
+
