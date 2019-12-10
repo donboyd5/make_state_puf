@@ -47,17 +47,18 @@ source(here::here("r/includes", "functions_state_puf.r"))
 
 ns <- function(df) {names(df) %>% sort}
 
+setdiff_all <- function(v1, v2){
+  # v1, v2: 2 vectors of the same type
+  # which elements are not in both vectors?
+  setdiff(union(v1, v2), intersect(v1, v2))
+}
+
 ```
 
 
 
 # Outline of work
-
-1. ONETIME:
-    + Get and save 2011 targets for all states
-    + Get and save an rds version of the PUF, with aggregate records excluded
-    + Get and save ratio-adjusted weights for all states
-
+[TO COME]
 
 
 # Steps
@@ -75,12 +76,11 @@ ns(df)
 # XOPAR   Exemptions for Parents Living at Home or Away from Home
 
 # we will get other variables after we run the "grown" file through Tax-Calculator
-#   c00100 --> E00100
-#   ?? --> E02500
-#   ?? --> E04800
+#   c00100 --> E00100  AGI
+#   c02500 --> E02500  Social Security benefits in AGI
+#   c04800 --> E04800  Regular taxable income
 needed_puf_vars <- c(names(df), "E03260", "XOCAH", "XOCAWH", "XOODEP", "XOPAR")
 saveRDS(needed_puf_vars, here::here("data", "needed_puf_vars.csv"))
-
 # readRDS(here::here("data", "needed_puf_vars.csv"))
 
 # On Mon, Nov 4, 2019 at 10:03 AM Yin, Yimeng <yyin@albany.edu> wrote:
@@ -99,12 +99,12 @@ saveRDS(needed_puf_vars, here::here("data", "needed_puf_vars.csv"))
 # puf['e02500'] "Social Security benefits in AGI"
 # puf['e04800'] "Taxable income"
 
+# See user guide: http://pslmodels.github.io/Tax-Calculator/uguide.html
+
 ```
 
 
-
-## Get and save targets for all states
-
+# other tasks
 ```{r ONETIME_targets, eval=FALSE}
 # create a clean file of 2011 SOI Historical Table 2 targets, all states, saved in data/hist2_2011.csv
 source(here::here("r", "0a_prepare_soi2011_targets_csvformat.r"))
@@ -115,16 +115,33 @@ source(here::here("r", "0b_prepare_soicsv_targets.r"))
 prepare_soicsv_targets_long(globals, 2017) # creates ./data/hist2_2011.rds with soi targets all states
 # readRDS(here::here("data", paste0("hist2_targets", 2017, ".rds")))
 
-# puf <- get_puf_xagg() # ORIGINAL PUF less the 4 aggregate records, with a wt variable
-# glimpse(puf)
+# get 2011 to 2017 growth ratios for SOI - we use these to help calculate grow factors - just for US
+source(here::here("r", "0c_get_soi_historical2_growthratios.r"))
+# readRDS(here::here("data", "growthratios_2011to2017.rds"))
 
-# prepare 
+# prepare growth factors based on the SOI growth rates and other considerations
+source(here::here("r", "0c_prepare_growfactors.r"))
+# readRDS(here::here("data", "grow_factors_final_2011to2017.rds")) # grow_factors_final
 
-# prepare puf for tax-calculator and get 2017 agi
+# "grow" the file to 2017 and prepare puf for tax-calculator and get 2017 agi
+source(here::here("r", "0d_grow_puf.r"))
+# readRDS(paste0(globals$tcdir, globals$statedir, "puf2017_unweighted.rds"))
 
-# Prepare a file for each year with RECID and ratio-adjusted weights for EACH state
-source(here::here("r", "0b_prepare_ratio_adjusted_state_weights.r"))
+# TO COME ----
+# run the file through tax calculator to get 2017 AGI
+
+# add national weights consistent with total US agi
+
+# mechanically construct ratio-adjusted state weights for the state in question, as a starting point
+
+# reweight the file by 2017 AGI bins to hit or come close to state targets (Ipopt, python can be CVXOPT)
+
+# evaluate results
 
 
 ```
+
+
+
+
 
