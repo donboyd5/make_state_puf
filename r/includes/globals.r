@@ -13,7 +13,7 @@ globals$pufdir <- paste0(globals$dbox, "OSPC - Shared/IRS_pubuse_2011/") # locat
 # private directory for Tax-Calculator record-level output that we don't want moved from this machine
 globals$tcdir <- "D:/tcdir/"
 
-globals$statedir <- paste0(globals$tc.dir, "state_puf/")
+globals$statedir <- paste0(globals$tcdir, "state_puf/")
 
 globals$hist2 <- paste0(globals$dbox, "RPrograms PC/OSPC/make_state_puf/data/SOI_Historical_Table_2/")
 

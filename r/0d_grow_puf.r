@@ -25,4 +25,6 @@ summary(puf2017)
 ns(puf2017)
 # note that we still need to adjust S006 to reflect 2017 weights in aggregate (and then we need to reweight)
 
-saveRDS(puf2017, paste0(globals$tcdir, globals$statedir, "puf2017_unweighted.rds"))
+saveRDS(puf2017, paste0(globals$statedir, "puf2017_unweighted.rds"))
+
+# conda update -c PSLmodels taxcalc

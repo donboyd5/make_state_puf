@@ -16,7 +16,17 @@ make.sparse.structure <- function(A) {
 
 
 #****************************************************************************************************
-#                constraint evaluation and coefficient functions for ipoptr -- same for all ####
+#                Flatten the constraint coefficients matrix ####
+#****************************************************************************************************
+cc_flatten <- function(ccmat, ccvars){
+  # flatten the constraint coefficients matrix
+  c(as.matrix(ccmat[, ccvars]))
+}
+
+
+
+#****************************************************************************************************
+#                constraint evaluation and coefficient functions for ipoptr SPARSE -- same for all ####
 #****************************************************************************************************
 eval_g <- function(x, inputs) {
   # constraints that must hold in the solution - just give the LHS of the expression
@@ -53,6 +63,83 @@ eval_jac_g <- function(x, inputs){
   
   return(inputs$constraint.coefficients.sparse$nzcc)
 }
+
+
+#****************************************************************************************************
+#                constraint evaluation and coefficient functions for ipoptr DENSE -- same for all ####
+#****************************************************************************************************
+eval_g_dense <- function(x, inputs) {
+  # constraints that must hold in the solution - just give the LHS of the expression
+  # return a vector where each element evaluates a constraint (i.e., sum of (x * a ccmat column), for each column)
+  
+  # ipoptr requires that ALL functions receive the same arguments, so the inputs list is passed to ALL functions
+  
+  # cons <- colSums(x * select(inputs$concoef, inputs$constraint_vars)) %>% 
+  #   unname
+  cons <- colSums(x * inputs$concoef[, inputs$constraint_vars]) %>% 
+    unname
+  
+  return(cons)
+}
+
+
+eval_jac_g_dense <- function(x, inputs){
+  # the Jacobian is the matrix of first partial derivatives of constraints (these derivatives may be constants) wrt
+  # this function evaluates the Jacobian at point x
+  
+  # return: a vector where each element gives a NONZERO partial derivative of constraints wrt change in x
+  # so that the first m items are the derivs with respect to each element of first column of ccmat
+  # and next m items are derivs with respect to 2nd column of ccmat, and so on
+  # so that it returns a vector with length=nrows x ncolumns in ccmat
+  
+  # because constraints in this problem are linear, the derivatives are all constants
+  
+  # ipoptr requires that ALL functions receive the same arguments, so the inputs list is passed to ALL functions
+  
+  return(inputs$cc_dense)
+}
+
+
+define_jac_g_structure_dense <- function(n_constraints, n_variables){
+  # list with n_constraints elements
+  # each element is 1:n_variables
+  lapply(1:n_constraints, function(n_constraints, n_variables) 1:n_variables, n_variables)
+  
+  # Example:
+  # eval_jac_g_structure_dense <- define_jac_g_structure_dense(n_constraints=2, n_variables=4)
+} 
+
+
+eval_jac_g_sparse <- function(x, inputs){
+  # the Jacobian is the matrix of first partial derivatives of constraints (these derivatives may be constants) wrt
+  # this function evaluates the Jacobian at point x
+  
+  # return: a vector where each element gives a NONZERO partial derivative of constraints wrt change in x
+  # so that the first m items are the derivs with respect to each element of first column of ccmat
+  # and next m items are derivs with respect to 2nd column of ccmat, and so on
+  # so that it returns a vector with length=nrows x ncolumns in ccmat
+  
+  # because constraints in this problem are linear, the derivatives are all constants
+  
+  # ipoptr requires that ALL functions receive the same arguments, so the inputs list is passed to ALL functions
+  cc_sparse <- inputs$cc_dense[inputs$cc_dense!=0]
+  return(cc_sparse)
+}
+
+define_jac_g_structure_sparse <- function(inputs){
+  # list with n_constraints elements
+  # each element is 1:n_variables
+  
+  mat <- inputs$concoef[, inputs$constraint_vars] %>% as.matrix %>% unname
+  f <- function(x) which(x!=0, arr.ind=TRUE)
+  jac_sparse <- apply(mat, 2, f)
+  
+  return(jac_sparse)
+} 
+
+
+
+
 
 
 #****************************************************************************************************
@@ -180,5 +267,78 @@ eval_h_xm1sq <- function(x, obj_factor, hessian_lambda, inputs){
 }
 
 
+#****************************************************************************************************
+#                absolute-value approximation functions ####
+#****************************************************************************************************
 
+
+eval_f_absapprox <- function(x, inputs) {
+  #.. objective function - evaluates to a single number ----
+  # returns a single value
+  
+  # ipoptr requires that ALL functions receive the same arguments, so a list called inputs is passed to ALL functions
+  
+  # here are the objective function, the 1st deriv, and the 2nd deriv
+  # http://www.derivative-calculator.net/
+  
+  # s is a small amount we add
+  
+  # [(x-1)^2 + s^2]^{1/2}                                objective function
+  # (x - 1) / ({(x - 1)^2 + s^2}^(1/2))                  first deriv
+  # s^2 / [(x-1)^2 + s^2]^(3/2)                          second deriv
+  
+  # make it easier to read:
+  s <- inputs$s
+  
+  obj <- sum({(x - 1)^2 + s^2}^(1/2))
+  
+  return(obj)
+}
+
+
+eval_grad_f_absapprox <- function(x, inputs){
+  #.. gradient of objective function - a vector length x ----
+  # giving the partial derivatives of obj wrt each x[i]
+  # returns one value per element of x
+  
+  # ipoptr requires that ALL functions receive the same arguments, so a list called inputs is passed to ALL functions
+  
+  # here are the objective function, the 1st deriv, and the 2nd deriv
+  # http://www.derivative-calculator.net/
+  # 
+  # [(x-1)^2 + s^2]^{1/2}                                objective function
+  # (x - 1) / ({(x - 1)^2 + s^2}^(1/2))                  first deriv
+  # s^2 / [(x-1)^2 + s^2]^(3/2)                          second deriv
+  
+  # make it easier to read:
+  s <- inputs$s
+  
+  gradf <- (x - 1) / ({(x - 1)^2 + s^2}^(1/2))
+  
+  return(gradf)
+}
+
+eval_h_absapprox <- function(x, obj_factor, hessian_lambda, inputs){
+  # The Hessian matrix ----
+  # The Hessian matrix has many zero elements and so we set it up as a sparse matrix
+  # We only keep the (potentially) non-zero values that run along the diagonal.
+  # the Hessian is returned as a long vector. 
+  # Separately, we define which elements of this vector correspond to which cells of the Hessian matrix.
+  
+  # obj_factor and hessian_lambda are required arguments of the function. They are created within ipoptr - we do not create them.
+  
+  # http://www.derivative-calculator.net/
+  
+  # [(x-1)^2 + s^2]^{1/2}                                objective function
+  # (x - 1) / ({(x - 1)^2 + s^2}^(1/2))                  first deriv
+  # s^2 / [(x-1)^2 + s^2]^(3/2)                          second deriv
+  
+  # make it easier to read:
+  s <- inputs$s
+  
+  hess <- obj_factor * 
+    ( s^2 / {((x-1)^2 + s^2)^(3/2)} )
+  
+  return(hess)
+}
 

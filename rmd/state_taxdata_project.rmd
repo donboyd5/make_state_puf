@@ -125,16 +125,21 @@ source(here::here("r", "0c_prepare_growfactors.r"))
 
 # "grow" the file to 2017 and prepare puf for tax-calculator and get 2017 agi
 source(here::here("r", "0d_grow_puf.r"))
-# readRDS(paste0(globals$tcdir, globals$statedir, "puf2017_unweighted.rds"))
+# readRDS(paste0(globals$statedir, "puf2017_unweighted.rds"))
 
-# TO COME ----
-# run the file through tax calculator to get 2017 AGI
-
-# add national weights consistent with total US agi
+# two steps:
+#   1) run file through tax-calculator to add agi2017 and certain other calculated variables
+#   2) construct an initial 2017 US weight that hits the US agi target
+source(here::here("r", "0e_get_agi2017.r"))
+# readRDS(paste0(globals$statedir, "puf2017_weighted.rds"))
 
 # mechanically construct ratio-adjusted state weights for the state in question, as a starting point
+source(here::here("r", "0f_get_ratioweights2017.r"))
+# readRDS(paste0(globals$statedir, "puf2017_stateweights1.rds"))
 
 # reweight the file by 2017 AGI bins to hit or come close to state targets (Ipopt, python can be CVXOPT)
+
+
 
 # evaluate results
 
