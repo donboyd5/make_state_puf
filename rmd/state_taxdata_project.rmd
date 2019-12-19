@@ -45,14 +45,6 @@ source(here::here("r/includes", "globals.r"))
 globals
 source(here::here("r/includes", "functions_state_puf.r"))
 
-ns <- function(df) {names(df) %>% sort}
-
-setdiff_all <- function(v1, v2){
-  # v1, v2: 2 vectors of the same type
-  # which elements are not in both vectors?
-  setdiff(union(v1, v2), intersect(v1, v2))
-}
-
 ```
 
 
@@ -104,8 +96,11 @@ saveRDS(needed_puf_vars, here::here("data", "needed_puf_vars.csv"))
 ```
 
 
-# other tasks
+# prepare state targets for 2011 and 2017
 ```{r ONETIME_targets, eval=FALSE}
+# NOTE: I put all dollar targets into actual dollars, rather than $ thousands as they are in source data
+# Later we may do some scaling in optimization routines, howev er
+
 # create a clean file of 2011 SOI Historical Table 2 targets, all states, saved in data/hist2_2011.csv
 source(here::here("r", "0a_prepare_soi2011_targets_csvformat.r"))
 save_soi2011_targets_csvformat(globals) # creates ./data/hist2_2011.rds with soi targets all states
@@ -115,6 +110,11 @@ source(here::here("r", "0b_prepare_soicsv_targets.r"))
 prepare_soicsv_targets_long(globals, 2017) # creates ./data/hist2_2011.rds with soi targets all states
 # readRDS(here::here("data", paste0("hist2_targets", 2017, ".rds")))
 
+```
+
+
+# prepare a national PUF file with weights for 2017
+```{r ONETIME_puf2017_national}
 # get 2011 to 2017 growth ratios for SOI - we use these to help calculate grow factors - just for US
 source(here::here("r", "0c_get_soi_historical2_growthratios.r"))
 # readRDS(here::here("data", "growthratios_2011to2017.rds"))
@@ -131,22 +131,30 @@ source(here::here("r", "0d_grow_puf.r"))
 #   1) run file through tax-calculator to add agi2017 and certain other calculated variables
 #   2) construct an initial 2017 US weight that hits the US agi target
 source(here::here("r", "0e_get_agi2017.r"))
-# readRDS(paste0(globals$statedir, "puf2017_weighted.rds"))
+# readRDS(paste0(globals$statedir, "puf2017_weighted.rds")) # this is the national file for 2017
 
-# mechanically construct ratio-adjusted state weights for the state in question, as a starting point
+```
+
+
+# construct ratio-adjusted weights for all states, and save them -- a starting point for optimization
+```{r ONETIME_state_ratio_adjusted_weights}
+# mechanically construct ratio-adjusted state weights for the state in question, as a starting point for optimization
 source(here::here("r", "0f_get_ratioweights2017.r"))
-# readRDS(paste0(globals$statedir, "puf2017_stateweights1.rds"))
+# readRDS(paste0(globals$statedir, "state_ratio_adjusted_weights_2017.rds")) # long file, a weight for every state
 
+```
+
+
+# Optimize for a single state
+```{r optimize_single_state}
 # reweight the file by 2017 AGI bins to hit or come close to state targets (Ipopt, python can be CVXOPT)
-
 
 
 # evaluate results
 
 
+
 ```
-
-
 
 
 

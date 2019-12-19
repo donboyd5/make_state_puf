@@ -92,7 +92,7 @@ averages <- stack %>%
   select(-h2vname) %>%
   filter(vtype %in% c("amount", "number")) %>%
   pivot_wider(names_from = vtype, values_from = target) %>%
-  mutate(average=amount / number * 1000,
+  mutate(average=amount / number,
          vtype="average") %>%
   select(year, vtype, base_name, base_desc, target=average)
 summary(averages) # 0 NAs because of the agi number fix

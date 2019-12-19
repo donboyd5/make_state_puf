@@ -69,6 +69,7 @@ get_2011xls_2017csv_xwalk <- function(globals){
 
 
 save_soi2011_targets_csvformat <- function(globals){
+  
   soi_long <- get_soi2011_targets_long(globals)
   # xwalk <- get_2011SOI_puf_xwalk(globals)
   xwalk <- get_2011xls_2017csv_xwalk(globals)
@@ -82,7 +83,9 @@ save_soi2011_targets_csvformat <- function(globals){
   # tmp <- soi_with_names %>% filter(table_desc != table_desc.x, stabbr=="US")
   
   soi_targets <- soi_with_names %>%
-    mutate(year=2011) %>%
+    mutate(year=2011,
+           # SOI 2011 dollar data are in thousands, so convert to dollars
+           target=ifelse(str_sub(h2vname, 1, 1)=="A", target * 1000, target)) %>%
     select(year, stabbr, lineno, h2vname, AGI_STUB, table_desc, target) %>%
     arrange(lineno, h2vname, stabbr, AGI_STUB)
   

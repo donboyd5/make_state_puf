@@ -31,7 +31,9 @@ prepare_soicsv_targets_long <- function(globals, year){
     mutate(year=year) %>%
     rename(stabbr=STATE) %>%
     pivot_longer(cols=-c(year, stabbr, AGI_STUB), names_to="h2vname", values_to = "target") %>%
-    mutate(target=parse_number(target)) %>%
+    mutate(target=parse_number(target),
+           # SOI csv dollar data are in thousands, so convert to dollars
+           target=ifelse(str_sub(h2vname, 1, 1)=="A", target * 1000, target)) %>%
     left_join(xwalk, by="h2vname") %>%
     select(year, stabbr, h2vname, AGI_STUB, table_desc, target) %>%
     arrange(h2vname, stabbr, AGI_STUB)
@@ -39,38 +41,5 @@ prepare_soicsv_targets_long <- function(globals, year){
   saveRDS(hist2_long, here::here("data", paste0("hist2_targets", year, ".rds")))
   return(NULL)
 }
-
-
-
-
-
-
-# create_and_save_soi2011_targets <- function(globals){
-#   soi_long <- get_soi2011_targets_long(globals)
-#   xwalk <- get_2011xls_2017csv_xwalk(globals)
-#   
-#   soi_with_names <- soi_long %>%
-#     left_join(xwalk, by=c("lineno")) %>%
-#     rename(table_desc=table_desc.y)
-#   
-#   # do some checks
-#   # soi_with_names %>% filter(is.na(h2vname))
-#   # tmp <- soi_with_names %>% filter(table_desc != table_desc.x, stabbr=="US")
-#   
-#   # saltfix <- get_saltfix(xwalk, soi_with_names)
-#   
-#   inclink <- get_income_ranges(2011)
-#   soi_targets <- soi_with_names %>%
-#     mutate(year=2011) %>%
-#     select(stabbr, h2vname, incgrp, table_desc, target) %>%
-#     arrange(h2vname, stabbr, incgrp)
-#   
-#   saveRDS(soi_targets, here::here("data", "hist2_targets2011.rds"))
-#   return(NULL)
-# }
-
-
-
-# left_join(inclink %>% select(incgrp, imin_ge, imax_lt), by="incgrp") %>%
 
 

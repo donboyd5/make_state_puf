@@ -9,13 +9,13 @@ library("readxl")
 
 library("scales")
 
-library("btools") # You should not need this. If you do, get with devtools::install_github("donboyd5/btools")
+library("btools") # devtools::install_github("donboyd5/btools")
 
 library("janitor") # for adorn_totals
 
 # library("htmltools")
 library("knitr")
-library("kableExtra") # caution - this prevents knitr from rendering output to console, but it goes to viewer if  %>% kable_styling()
+library("kableExtra") # caution - this prevents knitr from rendering output to console, but it goes to viewer if %>% kable_styling()
 # kable(mtcars[1:5, ]) # for testing
 # kable(mtcars[1:5], format="html")
 # kable(mtcars[1:5], format="rst") # works in console even if in an rmd file

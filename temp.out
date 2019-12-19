@@ -1,13 +1,14 @@
 This is Ipopt version 3.12, running with linear solver ma86.
 
-Number of nonzeros in equality constraint Jacobian...:    60791
-Number of nonzeros in inequality constraint Jacobian.:        0
-Number of nonzeros in Lagrangian Hessian.............:    21942
+****************
+This program contains Ipopt, a library for large-scale nonlinear optimization.
+ Ipopt is released as open source code under the Eclipse Public License (EPL).
+         For more information visit http://projects.coin-or.org/Ipopt
+******************************************************************************
 
-Total number of variables............................:    21942
-                     variables with only lower bounds:        0
-                variables with lower and upper bounds:    21942
-                     variables with only upper bounds:        0
+This is Ipopt version 3.12, running with linear solver ma86.
+
+                  variables with only upper bounds:        0
 Total number of equality constraints.................:        3
 Total number of inequality constraints...............:        0
         inequality constraints with only lower bounds:        0

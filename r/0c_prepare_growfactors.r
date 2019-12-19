@@ -5,6 +5,7 @@
 
 # define the subset of the needed_puf_vars for which we will want growth factors
 # we will take the nongrowth_vars as is, or adjust outside of this process
+# these variables tend to be form-filing indicators, IDs, and exemption amounts
 nongrowth_vars <- c("DSI", "EIC", "F2441", "F6251", "FDED", "MARS", "MIDR", "N24", "RECID", "S006",
                     "XOCAH", "XOCAWH", "XOODEP", "XOPAR", "XTOT")
 # DSI Dependent Status Indicator
@@ -41,14 +42,16 @@ grow_factors_adjusted <- grow_factors_base %>%
   mutate(base_name=case_when(pufvname %in% c("E00400") ~ "00300", # tax-exempt interest gets taxable interest growth
                              pufvname %in% c("E00800", "E03500") ~ "00200", # alimony gets wage growth
                              pufvname %in% c("E01500") ~ "01700",  # pensions
+                             
                              # gains growth
                              pufvname %in% c("E01100", "E01200", "E24515", "E24518",
                                              "P22250", "P23250") ~ "01000",
                              pufvname %in% c("E02400", "E09800") ~ "02500", # social security
                              pufvname %in% c("E02000") ~ "00900", # business to partnership net income or loss
                              pufvname %in% c("E02100", "E27200") ~ "00900", # farm income - no good mapping for now
+                             
                              # tax deductions - can be improved upon
-                             pufvname %in% c("E18400") ~ "18425", # farm income - no good mapping for now
+                             pufvname %in% c("E18400") ~ "18425",
                              TRUE ~ base_name))
 # 2.
 grow_match <- grow_factors_adjusted %>%
