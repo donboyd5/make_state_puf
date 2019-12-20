@@ -4,6 +4,7 @@
 .Ruserdata
 *.pdf
 *.xls*
+*.rds
 *.html
 data/
 

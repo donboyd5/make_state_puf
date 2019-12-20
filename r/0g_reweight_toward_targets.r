@@ -120,6 +120,7 @@ pufbase_state <-
   arrange(RECID) %>%
   mutate(i=row_number()) # useful to have for the constraint coefficients data frame
 glimpse(pufbase_state)
+sum(pufbase_state$weight_state)
 
 
 # create constraint coefficients
@@ -189,8 +190,261 @@ starting_point %>%
 
 # we need a function to calculate constraints
 
+# create a data frame with tolerances
+# show a reminder of the constraints
+starting_point %>%
+  group_by(constraint_name, constraint_type, table_desc) %>%
+  summarise(target=sum(target), pdiff=median(pdiff)) %>%
+  arrange(-target)
+
+# create a few priority levels
+p1 <- c("A00100", "A00200", "A05800", "A18500", "N2", "MARS1", "MARS2", "MARS4")
+tol_df <- starting_point %>%
+  mutate(tol_default=case_when(constraint_name %in% p1 ~ .005,
+                               TRUE ~ abs(pdiff/100) * .10))
+
+tol_df %>%
+  filter(AGI_STUB==2) %>%
+  select(-c(target_num, file)) %>%
+  mutate(tol_default=tol_default * 100) %>%
+  mutate(table_desc=str_remove(table_desc, "Number of") %>% str_sub(., 1, 35)) %>%
+  kable(digits=c(rep(0, 8), 1, 1), format="rst")
 
 
+# run the problem ----
+# first scale 
+# try to make the "typical" values of the non-zero first partial derivatives of the objective and constraint functions
+# to be on the order of, say, 0.01 to 100. For example, if you multiply a problem function by a number K, then the first partial derivatives for this function are also multiplied by K.
+
+
+stub <- 2
+cnames <- tol_df %>% filter(AGI_STUB==stub) %>% .$table_desc %>% str_remove(., "Number of") %>% str_sub(., 1, 35)
+
+constraints_unscaled <- tol_df %>% filter(AGI_STUB==stub) %>% .$target
+constraint_scales <- ifelse(constraints_unscaled==0, 1, abs(constraints_unscaled) / 1000) # each constraint will be this number when scaled
+(constraints <- constraints_unscaled / constraint_scales)
+
+# create nzcc for the stub, and its own i and j for each record
+nzcc_stub <- nzcc %>%
+  ungroup %>% # just to be sure
+  filter(AGI_STUB==stub) %>%
+  arrange(constraint_name, RECID) %>%
+  # NOTE!!: i gives the index for constraints, j gives it for the RECID (for the variables)
+  mutate(i=group_indices(., constraint_name),
+         j=group_indices(., RECID)) %>% # file-wide indexes based on sort of RECID and constraint_name
+  mutate(nzcc_unscaled=nzcc,
+         nzcc=nzcc_unscaled / constraint_scales[i])
+
+nzcc_stub %>% select(constraint_name, RECID, i, j, nzcc, nzcc_unscaled) %>% arrange(RECID, constraint_name)
+
+inputs <- list()
+inputs$p <- 2
+inputs$wt <- pufbase_state %>% filter(AGI_STUB==stub) %>% arrange(RECID) %>% .$weight_state
+inputs$RECID <- pufbase_state %>% filter(AGI_STUB==stub) %>% arrange(RECID) %>% .$RECID
+inputs$constraint_coefficients_sparse <- nzcc_stub
+inputs$n_variables <- length(inputs$wt)
+inputs$n_constraints <- length(constraints)
+inputs$objscale <- 1e6
+inputs$constraint_scales <- constraint_scales
+
+xlb <- rep(0, inputs$n_variables)
+xub <- rep(100, inputs$n_variables)
+x0 <- rep(1, inputs$n_variables)
+
+
+tol <- tol_df %>% filter(AGI_STUB==stub) %>% .$tol_default
+
+clb <- constraints - abs(constraints) * tol
+cub <- constraints + abs(constraints) * tol
+cbind(clb, constraints, cub) %>% round(0)
+
+eval_jac_g_structure <- define_jac_g_structure_sparse2(inputs$constraint_coefficients_sparse, ivar="i", jvar="j")
+eval_jac_g_structure[1]
+length(eval_jac_g_structure)
+
+eval_h_structure <- lapply(1:inputs$n_variables, function(x) x) # diagonal elements of our Hessian
+
+eval_f_xtop(x0, inputs)# ; eval_f_absapprox(xlb, inputs); eval_f_absapprox(xub, inputs)
+eval_grad_f_xtop(x0, inputs)
+eval_g(x0, inputs)
+eval_jac_g(x0, inputs)
+eval_h_xtop(x0, obj_factor=1, hessian_lambda=rep(1, inputs$n_constraints), inputs) # length is n_variables
+# length(unlist(eval_h_structure)) # length should be n_variables
+
+
+# ma86 was faster in one test I did
+opts <- list("print_level" = 0,
+             "file_print_level" = 5, # integer
+             "linear_solver" = "ma86", # mumps pardiso ma27 ma57 ma77 ma86 ma97
+             "max_iter"= 100,
+             #"obj_scaling_factor" = 10, # 1e7, # default 1
+             #"nlp_scaling_max_gradient" = 1e-3, # 1e-3, # default 100
+             #"derivative_test"="first-order",
+             #"derivative_test_print_all"="yes",
+             "output_file" = "temp1.out")
+
+# osf, maxg, obj, conviol
+# 1: 1 100: 2.15e7, 3.6e8
+# 2: 100 100: 7.1e6, 3.9e8
+# 3: 100 1000: 7.6e6 2.7e8
+# 4: 100 10: 1e7 2.6e8
+# 5: 1e5 10: 8.6e6 3.6e8
+# 6: 1e-2 100: 2e8 7e9
+# 7: 1e-3 1e3: 2e8 3e8
+# 8: 1e7 1e-3: 1e7 2e8
+
+result <- ipoptr(x0 = x0,
+                 lb = xlb,
+                 ub = xub,
+                 eval_f = eval_f_xtop, # arguments: x, inputs
+                 eval_grad_f = eval_grad_f_xtop,
+                 eval_g = eval_g, # constraints LHS - a vector of values
+                 eval_jac_g = eval_jac_g,
+                 eval_jac_g_structure = eval_jac_g_structure,
+                 eval_h = eval_h_xtop, # the hessian is essential for this problem
+                 eval_h_structure = eval_h_structure,
+                 constraint_lb = clb,
+                 constraint_ub = cub,
+                 opts = opts,
+                 inputs = inputs)
+
+str(result)
+
+tmp <- tibble(clb=clb * constraint_scales, 
+              targ=constraints * constraint_scales,
+              cub=cub * constraint_scales,
+              conval=result$constraints * constraint_scales,
+              start=eval_g(x0, inputs) * constraint_scales,
+              pdiff1=start / targ * 100 - 100,
+              pdiff2=conval / targ * 100 - 100,
+              startv=case_when(start < clb ~ "LOW",
+                               start > cub ~ "HIGH",
+                               TRUE ~ ""),
+              viol=case_when(conval < clb ~ "LOW",
+                             conval > cub ~ "HIGH",
+                             TRUE ~ ""),
+              cname=cnames)
+tmp %>%
+  kable(format="rst", digits=c(rep(0, 5), 1, 1), format.args=list(big.mark=","))
+
+
+
+# now cycle through the AGI_STUBs to get new weights for all records ----
+runstub <- function(AGI_STUB) {
+  stub <- AGI_STUB
+  cnames <- tol_df %>% filter(AGI_STUB==stub) %>% .$table_desc %>% str_remove(., "Number of") %>% str_sub(., 1, 35)
+  
+  constraints_unscaled <- tol_df %>% filter(AGI_STUB==stub) %>% .$target
+  constraint_scales <- ifelse(constraints_unscaled==0, 1, abs(constraints_unscaled) / 1000) # each constraint will be this number when scaled
+  constraints <- constraints_unscaled / constraint_scales
+  
+  # create nzcc for the stub, and its own i and j for each record
+  nzcc_stub <- nzcc %>%
+    ungroup %>% # just to be sure
+    filter(AGI_STUB==stub) %>%
+    arrange(constraint_name, RECID) %>%
+    # NOTE!!: i gives the index for constraints, j gives it for the RECID (for the variables)
+    mutate(i=group_indices(., constraint_name),
+           j=group_indices(., RECID)) %>% # file-wide indexes based on sort of RECID and constraint_name
+    mutate(nzcc_unscaled=nzcc,
+           nzcc=nzcc_unscaled / constraint_scales[i])
+  
+  inputs <- list()
+  inputs$p <- 2
+  inputs$wt <- pufbase_state %>% filter(AGI_STUB==stub) %>% arrange(RECID) %>% .$weight_state
+  inputs$RECID <- pufbase_state %>% filter(AGI_STUB==stub) %>% arrange(RECID) %>% .$RECID
+  inputs$constraint_coefficients_sparse <- nzcc_stub
+  inputs$n_variables <- length(inputs$wt)
+  inputs$n_constraints <- length(constraints)
+  inputs$objscale <- 1e6
+  inputs$constraint_scales <- constraint_scales
+  
+  xlb <- rep(0, inputs$n_variables)
+  xub <- rep(100, inputs$n_variables)
+  x0 <- rep(1, inputs$n_variables)
+  
+  tol <- tol_df %>% filter(AGI_STUB==stub) %>% .$tol_default
+  
+  clb <- constraints - abs(constraints) * tol
+  cub <- constraints + abs(constraints) * tol
+  
+  eval_jac_g_structure <- define_jac_g_structure_sparse2(inputs$constraint_coefficients_sparse, ivar="i", jvar="j")
+  eval_h_structure <- lapply(1:inputs$n_variables, function(x) x) # diagonal elements of our Hessian
+  
+  # ma86 was faster in one test I did
+  opts <- list("print_level" = 0,
+               "file_print_level" = 5, # integer
+               "linear_solver" = "ma86", # mumps pardiso ma27 ma57 ma77 ma86 ma97
+               "max_iter"= 100,
+               "output_file" = paste0("results/logs/stub_", str_pad(stub, width=2, side="left", pad="0"), ".out"))
+
+  result <- ipoptr(x0 = x0,
+                   lb = xlb,
+                   ub = xub,
+                   eval_f = eval_f_xtop, # arguments: x, inputs
+                   eval_grad_f = eval_grad_f_xtop,
+                   eval_g = eval_g, # constraints LHS - a vector of values
+                   eval_jac_g = eval_jac_g,
+                   eval_jac_g_structure = eval_jac_g_structure,
+                   eval_h = eval_h_xtop, # the hessian is essential for this problem
+                   eval_h_structure = eval_h_structure,
+                   constraint_lb = clb,
+                   constraint_ub = cub,
+                   opts = opts,
+                   inputs = inputs)
+  saveRDS(result, paste0("results/ipopt_output/ipopt_", str_pad(stub, width=2, side="left", pad="0"), ".rds"))
+  print(result$message)
+  
+  df <- tibble(AGI_STUB=stub, RECID=inputs$RECID, wt_init=inputs$wt, x=result$solution)
+  return(df)
+}
+
+
+tmp <- ldply(1:10, runstub, .progress="text")
+glimpse(tmp)
+count(tmp, AGI_STUB)
+ht(tmp)
+quantile(tmp$x, probs=c(0, .01, .05, .1, .25, .5, .75, .9, .95, .99, 1))
+saveRDS(tmp, here::here("results", "NY_x.rds"))
+
+
+# compare selected results to targets ----
+targets_state
+pufbase_state
+
+xvalues <- readRDS(here::here("results", "NY_x.rds"))
+
+comp <- pufbase_state %>%
+  left_join(xvalues %>% select(-AGI_STUB), by="RECID") %>%
+  mutate(weight_state2=wt_init * x)
+
+checksums <- comp %>%
+  group_by(AGI_STUB) %>%
+  # amounts in $b
+  summarise(nret=sum(weight_state2), agi=sum(c00100 * weight_state2) / 1e9) %>%
+  mutate(type="calc")
+
+checktargs <- targets_state %>%
+  filter((constraint_name=="A00100" & constraint_type=="amount") |
+           str_sub(constraint_name, 1, 4)=="MARS") %>%
+  select(AGI_STUB, constraint_name, constraint_type, target) %>%
+  mutate(target=ifelse(constraint_type=="amount", target / 1e9, target)) %>%
+  group_by(AGI_STUB, constraint_type) %>%
+  summarise(target=sum(target)) %>%
+  mutate(constraint_type=ifelse(constraint_type=="amount", "agi", "nret")) %>%
+  mutate(type="target")
+
+comp2 <- checksums %>%
+  pivot_longer(c(agi, nret)) %>%
+  bind_rows(checktargs %>% rename(name=constraint_type, value=target)) %>%
+  pivot_wider(names_from=type) %>%
+  select(name, AGI_STUB, target, calc) %>%
+  mutate(diff=calc - target,
+         pdiff=diff / target * 100) %>%
+  arrange(name, AGI_STUB)
+
+comp2 %>%
+  kable(digits=c(0, 0, 1, 1, 1, 1), format.args=list(big.mark=","), format="rst")
 
 
 

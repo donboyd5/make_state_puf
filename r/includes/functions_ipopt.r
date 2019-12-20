@@ -40,11 +40,11 @@ eval_g <- function(x, inputs) {
   #   j -- index into x (i.e., the variable number)
   #   nzcc
   
-  constraints <- inputs$constraint.coefficients.sparse %>%
-    group_by(i, target.num) %>%
-    summarise(constraint.value=sum(nzcc * x[j]))
+  constraints <- inputs$constraint_coefficients_sparse %>%
+    group_by(i) %>%
+    summarise(constraint_value=sum(nzcc * x[j]))
   
-  return(constraints$constraint.value)
+  return(constraints$constraint_value)
 }
 
 
@@ -61,8 +61,24 @@ eval_jac_g <- function(x, inputs){
   
   # ipoptr requires that ALL functions receive the same arguments, so the inputs list is passed to ALL functions
   
-  return(inputs$constraint.coefficients.sparse$nzcc)
+  return(inputs$constraint_coefficients_sparse$nzcc)
 }
+
+
+define_jac_g_structure_sparse2 <- function(nzcc_df, ivar="i", jvar="j"){
+  # the jacobian 
+  # return a list that defines the non-zero structure of the "virtual" constraints coefficient matrix
+  # the list has 1 element per constraint
+  #   each element of the list has a vector of indexes indicating which x variables have nonzero constraint coefficents
+  
+  # nzcc_df is a nonzero constraints coefficients data frame
+  # ivar gives the variable name for the integer index indicating each CONSTRAINT
+  # jvar gives the variable name (character) for the integer index indicating the nonzero x variables for that constraint
+  
+  jac_sparse <- dlply(nzcc_df, ivar, function(x) return(x[[jvar]]))
+  
+  return(jac_sparse)
+} 
 
 
 #****************************************************************************************************
@@ -127,6 +143,18 @@ eval_jac_g_sparse <- function(x, inputs){
 }
 
 define_jac_g_structure_sparse <- function(inputs){
+  # list with n_constraints elements
+  # each element is 1:n_variables
+  
+  mat <- inputs$concoef[, inputs$constraint_vars] %>% as.matrix %>% unname
+  f <- function(x) which(x!=0, arr.ind=TRUE)
+  jac_sparse <- apply(mat, 2, f)
+  
+  return(jac_sparse)
+} 
+
+
+define_jac_g_structure_sparse2 <- function(inputs){
   # list with n_constraints elements
   # each element is 1:n_variables
   
