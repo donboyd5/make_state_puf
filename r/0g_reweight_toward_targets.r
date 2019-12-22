@@ -46,6 +46,8 @@ targets_all <- bind_rows(targets1, targets_MARS3, targets_N00100)
 ht(targets_all)
 # END temporary fix ----
 
+saveRDS(targets_all, here::here("data", "targets_all.rds"))
+
 # create a crosswalk between PUF variable names and h2vnames ----
 # for now we will work with dense matrices - if it is a problem, we'll change to sparse
 (constraint_names <- unique(targets_all$h2vname) %>% sort)
@@ -119,6 +121,7 @@ pufbase_state <-
   pivot_wider(names_from = MARS, names_prefix = "MARS", values_from = weight2, values_fill = list(weight2=0)) %>%
   arrange(RECID) %>%
   mutate(i=row_number()) # useful to have for the constraint coefficients data frame
+saveRDS(pufbase_state, paste0(globals$statedir, "pufbase_state.rds"))
 glimpse(pufbase_state)
 sum(pufbase_state$weight_state)
 
@@ -216,6 +219,7 @@ tol_df %>%
 # try to make the "typical" values of the non-zero first partial derivatives of the objective and constraint functions
 # to be on the order of, say, 0.01 to 100. For example, if you multiply a problem function by a number K, then the first partial derivatives for this function are also multiplied by K.
 
+tol_df %>% filter(AGI_STUB==stub) 
 
 stub <- 2
 cnames <- tol_df %>% filter(AGI_STUB==stub) %>% .$table_desc %>% str_remove(., "Number of") %>% str_sub(., 1, 35)

@@ -149,10 +149,116 @@ source(here::here("r", "0f_get_ratioweights2017.r"))
 # Optimize for a single state
 ```{r optimize_single_state}
 # reweight the file by 2017 AGI bins to hit or come close to state targets (Ipopt, python can be CVXOPT)
-
+# NOT READY: source(here::here("r", "0g_reweight_toward_targets.r"))  
+# readRDS(here::here("results", "NY_x.rds"))
 
 # evaluate results
 
+
+
+```
+
+
+# Analyze results
+```{r}
+xvalues <- readRDS(here::here("results", "NY_x.rds"))
+# pufbase_state <- readRDS(paste0(globals$statedir, "pufbase_state.rds"))
+pufbase_all <- readRDS(paste0(globals$statedir, "puf2017_weighted.rds"))
+ns(pufbase_all)
+
+comp <- pufbase_all %>%
+  left_join(xvalues, by="RECID") %>%
+  mutate(weight_state=wt_init * x) %>%
+  rename(E00100=c00100, E05800=taxbc)
+glimpse(comp)
+
+
+nystats <- readRDS(here::here("data", paste0("hist2_targets", 2017, ".rds"))) %>%
+  filter(stabbr=="NY")
+
+nystats <- readRDS(here::here("data", "targets_all.rds")) %>%
+  filter(stabbr=="NY")
+
+
+compvars <- c("E00100", "E00200", "E05800")
+
+tab <- comp %>%
+  select(RECID, AGI_STUB, weight_state, compvars) %>%
+  group_by(AGI_STUB) %>%
+  summarise_at(vars(compvars), list(A=~sum(. * weight_state), N=~sum(weight_state * (. != 0)))) %>%
+  pivot_longer(-AGI_STUB) %>%
+  mutate(name=case_when(str_sub(name, -1) == "A" ~ paste0("A", str_sub(name, 2, 6)),
+                        str_sub(name, -1) == "N" ~ paste0("N", str_sub(name, 2, 6)))) %>%
+  left_join(nystats %>% select(name=h2vname, AGI_STUB, target, table_desc))
+
+
+f <- function(vname) {
+  scale <- ifelse(str_sub(vname, 1, 1)=="A", 1e9, 1)
+  
+  digs <- c(0, 0, 0, 1, 1, 1, 1)
+  if (str_sub(vname, 1, 1)=="N") digs <- c(0, 0, 0, 0, 0, 0, 1)
+  
+  tab %>% 
+    filter(name==vname) %>%
+    arrange(AGI_STUB) %>% 
+    adorn_totals() %>%
+    mutate(calc=value / scale,
+           target=target / scale,
+           diff=calc - target,
+           pdiff=diff / target * 100) %>%
+    select(AGI_STUB, name, table_desc, target, calc, diff, pdiff) %>%
+    kable(digits=digs, format.args = list(big.mark=","), format="rst")
+}
+
+f("A00100")
+f("A00200")
+f("A05800")
+f("N00100")
+f("N00200")
+f("N05800")
+
+
+
+make_flex <- function(var, df, scale, htext){
+  tabdf <- df %>%
+    filter(name==var) %>%
+    mutate(sum=sum / scale) %>%
+    pivot_wider(names_from=ftype, values_from=sum) %>%
+    mutate(diff=syn - puf,
+           pdiff=diff / puf * 100)
+  
+  ft <- tabdf %>%
+    flextable(col_keys = c("agirange", 
+                         "separator1",
+                         "puf", "syn", "diff",
+                         "separator2",
+                         "pdiff")) %>%
+  set_header_labels(agirange="AGI range",
+                    puf = "Enhanced\nPUF",
+                    syn = "Synthetic\nfile",
+                    diff="Difference",
+                    pdiff="% Difference") %>%
+  add_header_row(values=c("", "", htext, "", ""), colwidths=c(1, 1, 3, 1, 1)) %>%
+  align(i = 1, j = NULL, align = "center", part = "header") %>%
+  colformat_num(j = c("puf", "syn", "diff"),
+                big.mark=",", digits = 1, na_str = "N/A") %>%
+  colformat_num(j = c("pdiff", "pdiff"),
+                big.mark=",", digits = 1, na_str = "N/A") %>%
+  width(j= ~ agirange, width=3) %>%
+  width(j = ~ puf + syn + diff + pdiff, width=1.5) %>%
+  width(j = ~ separator1 + separator2, width = .3) %>%
+  height_all(part = "header", height = .4) %>%
+  height_all(part = "body", height = .4) %>%
+  # now control the themes # theme_booktabs() %>%
+  border_remove() %>%
+  hline(i=1, j=~puf, border = fp_border(width = 1), part = "header") %>%
+  hline_bottom(j= ~ agirange + puf + syn + diff + pdiff, border = fp_border(width = 1), part = "header") %>%
+  hline(i=7, j= ~ agirange + puf + syn + diff + pdiff, border = fp_border(width = 1), part = "body") %>%
+  fontsize(size = 20, part = "all") %>%
+  fontsize(i=1, size = 20, part = "header")
+  
+  return(ft)  
+}
 
 
 ```
