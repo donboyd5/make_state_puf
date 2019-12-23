@@ -169,18 +169,20 @@ ns(pufbase_all)
 comp <- pufbase_all %>%
   left_join(xvalues, by="RECID") %>%
   mutate(weight_state=wt_init * x) %>%
-  rename(E00100=c00100, E05800=taxbc)
+  rename(E00100=c00100, E09600=c09600, E05800=c05800) 
 glimpse(comp)
+ns(comp)
+
+comp %>% select(-wt_init, -x, c62100) %>% write_csv(paste0(globals$state_puf_shared, "puf2017_usny.csv"))
 
 
-nystats <- readRDS(here::here("data", paste0("hist2_targets", 2017, ".rds"))) %>%
-  filter(stabbr=="NY")
+# nystats <- readRDS(here::here("data", paste0("hist2_targets", 2017, ".rds"))) %>%
+#   filter(stabbr=="NY")
 
 nystats <- readRDS(here::here("data", "targets_all.rds")) %>%
   filter(stabbr=="NY")
 
-
-compvars <- c("E00100", "E00200", "E05800")
+compvars <- c("E00100", "E00200", "E00300", "E02300", "E05800", "E09600", "E18500")
 
 tab <- comp %>%
   select(RECID, AGI_STUB, weight_state, compvars) %>%
@@ -191,75 +193,94 @@ tab <- comp %>%
                         str_sub(name, -1) == "N" ~ paste0("N", str_sub(name, 2, 6)))) %>%
   left_join(nystats %>% select(name=h2vname, AGI_STUB, target, table_desc))
 
+# df <- tab
+# vname <- "N00100"
 
-f <- function(vname) {
-  scale <- ifelse(str_sub(vname, 1, 1)=="A", 1e9, 1)
+make_flex <- function(vname, df) {
+    # define scaling and header text
+  htext <- df %>% filter(name==vname) %>% .$table_desc %>% unique
+  if(str_sub(vname, 1, 1)=="A") {
+    type <- "amount"
+    scale <- 1e9
+    htext <- paste0(htext, "\n(Billions of dollars)")
+  } else if(str_sub(vname, 1, 1)=="N") {
+    type=="number"
+    scale <- 1000
+    htext <- paste0(htext, "\n(Thousands of returns)")
+  }
   
-  digs <- c(0, 0, 0, 1, 1, 1, 1)
-  if (str_sub(vname, 1, 1)=="N") digs <- c(0, 0, 0, 0, 0, 0, 1)
-  
-  tab %>% 
+  tabdf <- df %>%
     filter(name==vname) %>%
     arrange(AGI_STUB) %>% 
     adorn_totals() %>%
+    mutate(AGI_STUB=ifelse(AGI_STUB=="Total", 0, AGI_STUB),
+           AGI_STUB=as.integer(AGI_STUB),
+           AGI_STUB=factor(AGI_STUB, levels=globals$agilabs$AGI_STUB, labels=globals$agilabs$agi_label)) %>%
     mutate(calc=value / scale,
            target=target / scale,
            diff=calc - target,
            pdiff=diff / target * 100) %>%
-    select(AGI_STUB, name, table_desc, target, calc, diff, pdiff) %>%
-    kable(digits=digs, format.args = list(big.mark=","), format="rst")
-}
-
-f("A00100")
-f("A00200")
-f("A05800")
-f("N00100")
-f("N00200")
-f("N05800")
-
-
-
-make_flex <- function(var, df, scale, htext){
-  tabdf <- df %>%
-    filter(name==var) %>%
-    mutate(sum=sum / scale) %>%
-    pivot_wider(names_from=ftype, values_from=sum) %>%
-    mutate(diff=syn - puf,
-           pdiff=diff / puf * 100)
+    select(AGI_STUB, name, table_desc, target, calc, diff, pdiff)
   
   ft <- tabdf %>%
-    flextable(col_keys = c("agirange", 
+    flextable(col_keys = c("AGI_STUB", 
                          "separator1",
-                         "puf", "syn", "diff",
+                         "target", "calc", "diff",
                          "separator2",
                          "pdiff")) %>%
-  set_header_labels(agirange="AGI range",
-                    puf = "Enhanced\nPUF",
-                    syn = "Synthetic\nfile",
+  set_header_labels(AGI_STUB="AGI range",
+                    target = "Historical Table 2",
+                    calc = "Calculated\nvalue",
                     diff="Difference",
                     pdiff="% Difference") %>%
   add_header_row(values=c("", "", htext, "", ""), colwidths=c(1, 1, 3, 1, 1)) %>%
   align(i = 1, j = NULL, align = "center", part = "header") %>%
-  colformat_num(j = c("puf", "syn", "diff"),
+  colformat_num(j = c("target", "calc", "diff"),
                 big.mark=",", digits = 1, na_str = "N/A") %>%
-  colformat_num(j = c("pdiff", "pdiff"),
+  colformat_num(j = c("pdiff"),
                 big.mark=",", digits = 1, na_str = "N/A") %>%
-  width(j= ~ agirange, width=3) %>%
-  width(j = ~ puf + syn + diff + pdiff, width=1.5) %>%
+  width(j= ~ AGI_STUB, width=3) %>%
+  width(j = ~ target + calc + diff + pdiff, width=1.5) %>%
   width(j = ~ separator1 + separator2, width = .3) %>%
   height_all(part = "header", height = .4) %>%
   height_all(part = "body", height = .4) %>%
   # now control the themes # theme_booktabs() %>%
   border_remove() %>%
-  hline(i=1, j=~puf, border = fp_border(width = 1), part = "header") %>%
-  hline_bottom(j= ~ agirange + puf + syn + diff + pdiff, border = fp_border(width = 1), part = "header") %>%
-  hline(i=7, j= ~ agirange + puf + syn + diff + pdiff, border = fp_border(width = 1), part = "body") %>%
+  hline(i=1, j=~target, border = fp_border(width = 1), part = "header") %>%
+  hline_bottom(j= ~ AGI_STUB + target + calc + diff + pdiff, border = fp_border(width = 1), part = "header") %>%
+  hline(i=10, j= ~ AGI_STUB + target + calc + diff + pdiff, border = fp_border(width = 1), part = "body") %>%
   fontsize(size = 20, part = "all") %>%
   fontsize(i=1, size = 20, part = "header")
   
   return(ft)  
 }
 
+
+# A00100 <- make_flex("A00100", tab)
+# save_as_image(A00100, path = here::here("results", "A00100.png"), zoom=7)
+
+savetab <- function(vname, tab) {
+  ftab <- make_flex(vname, tab)
+  save_as_image(ftab, path = here::here("results", paste0(vname, ".png")), zoom=7)
+}
+
+A02300
+
+savetab("A00100", tab)
+savetab("A00200", tab)
+savetab("A00300", tab)
+savetab("A02300", tab)
+savetab("A05800", tab)
+savetab("A09600", tab)
+savetab("A18500", tab)
+
+savetab("N00100", tab)
+savetab("N00200", tab)
+savetab("N00300", tab)
+savetab("N02300", tab)
+savetab("N05800", tab)
+savetab("N09600", tab)
+savetab("N18500", tab)
 
 ```
 

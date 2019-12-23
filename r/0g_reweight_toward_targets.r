@@ -75,7 +75,8 @@ mapping <- tibble(constraint_name=unique(targets_all$h2vname) %>% sort) %>%
          puf_link =
            # deal with special cases first, then general cases
            case_when(constraint_base_name == "00100" ~ "c00100",
-                     constraint_base_name == "05800" ~ "taxbc",
+                     constraint_base_name == "05800" ~ "c05800",
+                     constraint_base_name == "09600" ~ "c09600",
                      constraint_name == "N2" ~ "XTOT",
                      constraint_name %in% paste0("MARS", 1:4) ~ constraint_name,
                      constraint_type %in% c("amount", "n_nonzero") ~ paste0("E", constraint_base_name),
@@ -201,9 +202,10 @@ starting_point %>%
   arrange(-target)
 
 # create a few priority levels
-p1 <- c("A00100", "A00200", "A05800", "A18500", "N2", "MARS1", "MARS2", "MARS4")
+p1 <- c("A00100", "A00200", "A05800", "A09600", "A18500", "N2", "MARS1", "MARS2", "MARS4")
+p2 <- c("N00100", "N00200", "N05800", "N09600", "N18500")
 tol_df <- starting_point %>%
-  mutate(tol_default=case_when(constraint_name %in% p1 ~ .005,
+  mutate(tol_default=case_when(constraint_name %in% c(p1, p2) ~ .005,
                                TRUE ~ abs(pdiff/100) * .10))
 
 tol_df %>%
@@ -221,12 +223,13 @@ tol_df %>%
 
 tol_df %>% filter(AGI_STUB==stub) 
 
-stub <- 2
+stub <- 1
 cnames <- tol_df %>% filter(AGI_STUB==stub) %>% .$table_desc %>% str_remove(., "Number of") %>% str_sub(., 1, 35)
 
 constraints_unscaled <- tol_df %>% filter(AGI_STUB==stub) %>% .$target
 constraint_scales <- ifelse(constraints_unscaled==0, 1, abs(constraints_unscaled) / 1000) # each constraint will be this number when scaled
 (constraints <- constraints_unscaled / constraint_scales)
+# constraints <- constraints_unscaled
 
 # create nzcc for the stub, and its own i and j for each record
 nzcc_stub <- nzcc %>%
@@ -249,6 +252,7 @@ inputs$constraint_coefficients_sparse <- nzcc_stub
 inputs$n_variables <- length(inputs$wt)
 inputs$n_constraints <- length(constraints)
 inputs$objscale <- 1e6
+# inputs$objscale <- 1
 inputs$constraint_scales <- constraint_scales
 
 xlb <- rep(0, inputs$n_variables)
@@ -283,8 +287,8 @@ opts <- list("print_level" = 0,
              "max_iter"= 100,
              #"obj_scaling_factor" = 10, # 1e7, # default 1
              #"nlp_scaling_max_gradient" = 1e-3, # 1e-3, # default 100
-             #"derivative_test"="first-order",
-             #"derivative_test_print_all"="yes",
+             #"derivative_test" = "first-order",
+             #"derivative_test_print_all" = "yes",
              "output_file" = "temp1.out")
 
 # osf, maxg, obj, conviol

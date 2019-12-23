@@ -23,3 +23,6 @@ library("kableExtra") # caution - this prevents knitr from rendering output to c
 
 library("ipoptr")
 
+library("flextable")
+library("officer")
+
