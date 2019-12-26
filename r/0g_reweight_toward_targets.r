@@ -1,4 +1,11 @@
 
+source(here::here("r/includes", "libraries.r"))
+source(here::here("r/includes", "globals.r"))
+globals
+source(here::here("r/includes", "functions_state_puf.r"))
+source(here::here("r/includes", "functions_ipopt_djb.r"))
+
+
 target_state <- "NY"
 
 # get national data, and all targets -----
