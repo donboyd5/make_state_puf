@@ -47,6 +47,7 @@ ht(targets_all)
 # END temporary fix ----
 
 saveRDS(targets_all, here::here("data", "targets_all.rds"))
+targets_all <- readRDS(here::here("data", "targets_all.rds"))
 
 # create a crosswalk between PUF variable names and h2vnames ----
 # for now we will work with dense matrices - if it is a problem, we'll change to sparse
@@ -185,7 +186,7 @@ starting_point <- nzcc %>%
             pdiff=diff / target * 100)
 
 starting_point %>%
-  filter(AGI_STUB==2) %>%
+  filter(AGI_STUB==8) %>%
   mutate(table_desc=str_remove(table_desc, "Number of") %>% str_sub(., 1, 35)) %>%
   # note that we do not have taxbc 5800 as a target in AGI_STUB 1 but we do in other stubs
   kable(digits=c(rep(0, 9), 1), format="rst", format.args = list(big.mark=","))

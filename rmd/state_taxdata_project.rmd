@@ -109,7 +109,7 @@ save_soi2011_targets_csvformat(globals) # creates ./data/hist2_2011.rds with soi
 
 source(here::here("r", "0b_prepare_soicsv_targets.r"))
 prepare_soicsv_targets_long(globals, 2017) # creates ./data/hist2_2011.rds with soi targets all states
-# readRDS(here::here("data", paste0("hist2_targets", 2017, ".rds")))
+# tmp <- readRDS(here::here("data", paste0("hist2_targets", 2017, ".rds")))
 
 ```
 
@@ -173,7 +173,7 @@ comp <- pufbase_all %>%
 glimpse(comp)
 ns(comp)
 
-comp %>% select(-wt_init, -x, c62100) %>% write_csv(paste0(globals$state_puf_shared, "puf2017_usny.csv"))
+comp %>% select(-wt_init, -x, c62100) %>% write_csv(paste0(globals$state_puf_shared, "puf_ny_2017.csv"))
 
 
 # nystats <- readRDS(here::here("data", paste0("hist2_targets", 2017, ".rds"))) %>%
